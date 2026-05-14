@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>roman numerals — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+
+  .modes { display:flex; gap:0; margin-bottom:20px; border:1px solid hsl(var(--border)); border-radius:4px; padding:2px; width:fit-content; }
+  .mode-btn { appearance:none; background:transparent; border:none; padding:6px 14px; font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); cursor:pointer; border-radius:3px; transition:background 120ms ease, color 120ms ease; }
+  .mode-btn[aria-pressed="true"] { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+
+  .lbl { display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin-bottom:6px; }
+  input[type="text"] { width:100%; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:12px 14px; font-family:var(--mono); font-size:15px; color:hsl(var(--fg)); outline:none; transition:border-color 150ms ease; margin-bottom:8px; }
+  input[type="text"]:focus { border-color:hsl(var(--fg-dim)); }
+  input[type="text"]::placeholder { color:hsl(var(--muted-fg)); }
+
+  .err { font-family:var(--mono); font-size:12px; color:hsl(0 60% 55%); margin-bottom:8px; min-height:18px; }
+
+  .out-block { margin-top:16px; display:none; }
+  .result-val { font-family:var(--mono); font-size:28px; color:hsl(var(--fg)); margin-bottom:12px; word-break:break-all; }
+  .breakdown { font-family:var(--mono); font-size:13px; color:hsl(var(--fg-dim)); line-height:1.8; }
+  .copy { margin-top:10px; appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:5px 10px; font-family:var(--mono); font-size:11px; border-radius:3px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .copy:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } .result-val { font-size:22px; } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="./"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>roman numerals</h1>
+      <p>integer ↔ roman</p>
+    </div>
+
+    <div class="modes" role="group" aria-label="Direction">
+      <button class="mode-btn" data-mode="to-roman" aria-pressed="true">to roman</button>
+      <button class="mode-btn" data-mode="to-integer" aria-pressed="false">to integer</button>
+    </div>
+
+    <label class="lbl" for="num-in" id="input-lbl">integer (1–3999)</label>
+    <input type="text" id="num-in" placeholder="1954" autofocus autocomplete="off" spellcheck="false">
+    <div class="err" id="err-msg"></div>
+
+    <div class="out-block" id="out-block">
+      <div class="result-val" id="result-val"></div>
+      <div class="breakdown" id="breakdown"></div>
+      <button class="copy" id="copy-btn">copy</button>
+    </div>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>roman numerals</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  (function(){
+    var inp = document.getElementById('num-in');
+    var errEl = document.getElementById('err-msg');
+    var outBlock = document.getElementById('out-block');
+    var resultVal = document.getElementById('result-val');
+    var breakdownEl = document.getElementById('breakdown');
+    var inputLbl = document.getElementById('input-lbl');
+    var mode = 'to-roman';
+
+    var TABLE = [
+      [1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],
+      [100,'C'],[90,'XC'],[50,'L'],[40,'XL'],
+      [10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']
+    ];
+
+    var ROMAN_VALS = {
+      I:1,V:5,X:10,L:50,C:100,D:500,M:1000
+    };
+
+    function toRoman(n) {
+      var out = '';
+      var breakdown = [];
+      for (var i = 0; i < TABLE.length; i++) {
+        var val = TABLE[i][0], sym = TABLE[i][1];
+        while (n >= val) {
+          out += sym;
+          breakdown.push(sym + ' (' + val + ')');
+          n -= val;
+        }
+      }
+      return { roman: out, breakdown: breakdown };
+    }
+
+    function fromRoman(s) {
+      s = s.toUpperCase().trim();
+      if (!/^[IVXLCDM]+$/.test(s)) throw new Error('invalid characters — use I V X L C D M');
+      var total = 0;
+      var breakdown = [];
+      for (var i = 0; i < s.length; i++) {
+        var cur = ROMAN_VALS[s[i]];
+        var nxt = ROMAN_VALS[s[i+1]];
+        if (nxt && nxt > cur) {
+          breakdown.push(s[i] + s[i+1] + ' (' + (nxt - cur) + ')');
+          total += nxt - cur;
+          i++;
+        } else {
+          breakdown.push(s[i] + ' (' + cur + ')');
+          total += cur;
+        }
+      }
+      if (total < 1 || total > 3999) throw new Error('result out of range (1–3999)');
+      // validate by converting back
+      var check = toRoman(total).roman;
+      if (check !== s) throw new Error('not canonical roman form — expected: ' + check);
+      return { integer: total, breakdown: breakdown };
+    }
+
+    function run() {
+      var s = inp.value.trim();
+      errEl.textContent = '';
+      outBlock.style.display = 'none';
+      if (!s) return;
+      try {
+        if (mode === 'to-roman') {
+          var n = parseInt(s, 10);
+          if (isNaN(n) || String(n) !== s) throw new Error('enter a plain integer');
+          if (n < 1 || n > 3999) throw new Error('range is 1–3999');
+          var r = toRoman(n);
+          resultVal.textContent = r.roman;
+          breakdownEl.textContent = r.breakdown.join(' + ') + ' = ' + r.roman;
+        } else {
+          var d = fromRoman(s);
+          resultVal.textContent = d.integer;
+          breakdownEl.textContent = s.toUpperCase() + ' = ' + d.breakdown.join(' + ') + ' = ' + d.integer;
+        }
+        outBlock.style.display = '';
+      } catch(e) {
+        errEl.textContent = e.message;
+      }
+    }
+
+    inp.addEventListener('input', run);
+
+    document.querySelectorAll('.mode-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        mode = btn.dataset.mode;
+        document.querySelectorAll('.mode-btn').forEach(function(b){ b.setAttribute('aria-pressed', String(b===btn)); });
+        inputLbl.textContent = mode === 'to-roman' ? 'integer (1–3999)' : 'roman numeral';
+        inp.placeholder = mode === 'to-roman' ? '1954' : 'MCMLIV';
+        inp.value = '';
+        errEl.textContent = '';
+        outBlock.style.display = 'none';
+        inp.focus();
+      });
+    });
+
+    document.getElementById('copy-btn').addEventListener('click', function(){
+      var txt = resultVal.textContent;
+      if (!txt) return;
+      navigator.clipboard.writeText(txt).then(function(){
+        var btn = document.getElementById('copy-btn');
+        var o = btn.textContent; btn.textContent = 'copied';
+        setTimeout(function(){ btn.textContent = o; }, 900);
+      });
+    });
+
+    run();
+  })();
+</script>
+</body>
+</html>
