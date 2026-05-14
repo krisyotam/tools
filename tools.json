@@ -61,6 +61,8 @@
     { "slug": "roman-numerals",        "name": "roman numerals",        "category": "math",     "description": "integer \u2194 roman",             "keywords": ["roman", "numerals", "convert", "integer", "latin", "MCMLIV"],           "built": true, "added": "2026-05-13" },
     { "slug": "emoji-search",          "name": "emoji search",          "category": "misc",     "description": "find and copy emojis by name",     "keywords": ["emoji", "unicode", "copy", "search", "emoticon", "symbol"],            "built": true, "added": "2026-05-13" },
     { "slug": "metric-prefixes",       "name": "metric prefixes",       "category": "math",     "description": "value in every si prefix",         "keywords": ["si", "prefix", "metric", "kilo", "mega", "giga", "milli", "nano", "unit"], "built": true, "added": "2026-05-13" },
-    { "slug": "csv-to-table",          "name": "csv to table",          "category": "text",     "description": "csv \u2192 markdown table",        "keywords": ["csv", "table", "markdown", "gfm", "tsv", "delimiter", "convert", "spreadsheet"], "built": true, "added": "2026-05-13" }
+    { "slug": "csv-to-table",          "name": "csv to table",          "category": "text",     "description": "csv \u2192 markdown table",        "keywords": ["csv", "table", "markdown", "gfm", "tsv", "delimiter", "convert", "spreadsheet"], "built": true, "added": "2026-05-13" },
+    { "slug": "clipboard-viewer",      "name": "clipboard viewer",      "category": "dev",      "description": "inspect every mime type on the clipboard", "keywords": ["clipboard", "paste", "mime", "inspect", "view"],                 "built": true, "added": "2026-05-13" },
+    { "slug": "query-string-stripper", "name": "query string stripper", "category": "text",     "description": "remove tracking params from urls", "keywords": ["tracking", "utm", "url", "params", "query", "strip", "clean"],         "built": true, "added": "2026-05-13" }
   ]
 }
