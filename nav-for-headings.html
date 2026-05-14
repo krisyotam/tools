@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>nav for headings — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+
+  label.lbl { display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin:0 0 6px; }
+  textarea { width:100%; min-height:160px; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:12px 14px; font-family:var(--mono); font-size:12px; line-height:1.6; color:hsl(var(--fg)); outline:none; resize:vertical; transition:border-color 150ms ease; }
+  textarea:focus { border-color:hsl(var(--fg-dim)); }
+  textarea::placeholder { color:hsl(var(--muted-fg)); }
+
+  .sep { margin:24px 0; border:none; border-top:1px solid hsl(var(--rule)); }
+
+  .out-block { margin-bottom:24px; }
+  .out-block .lbl { margin-bottom:6px; }
+  .copy-row { display:flex; align-items:center; gap:8px; margin-top:6px; }
+  .btn { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:5px 10px; font-family:var(--mono); font-size:11px; border-radius:3px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .btn:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="./"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>nav for headings</h1>
+      <p>html &rarr; table of contents</p>
+    </div>
+
+    <label class="lbl" for="html-in">html input</label>
+    <textarea id="html-in" placeholder="<h1>Introduction</h1>&#10;<h2>Background</h2>&#10;<h3>Details</h3>&#10;<h2>Results</h2>" spellcheck="false"></textarea>
+
+    <hr class="sep">
+
+    <div class="out-block">
+      <label class="lbl">html with injected ids</label>
+      <textarea id="out-html" readonly rows="8"></textarea>
+      <div class="copy-row">
+        <button class="btn" data-copy="out-html">copy</button>
+      </div>
+    </div>
+
+    <div class="out-block">
+      <label class="lbl">table of contents</label>
+      <textarea id="out-toc" readonly rows="8"></textarea>
+      <div class="copy-row">
+        <button class="btn" data-copy="out-toc">copy</button>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>nav for headings</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  (function () {
+    var inEl    = document.getElementById('html-in');
+    var outHtml = document.getElementById('out-html');
+    var outToc  = document.getElementById('out-toc');
+    var timer   = null;
+
+    function toKebab(text) {
+      return text
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .trim()
+        .replace(/[\s_]+/g, '-')
+        .replace(/-+/g, '-');
+    }
+
+    function process(src) {
+      var parser  = new DOMParser();
+      var doc     = parser.parseFromString(src, 'text/html');
+      var headings = Array.from(doc.querySelectorAll('h1,h2,h3,h4,h5,h6'));
+      var slugCounts = {};
+
+      headings.forEach(function (h) {
+        var base = h.id ? toKebab(h.id) : toKebab(h.textContent);
+        if (!base) base = 'heading';
+        slugCounts[base] = (slugCounts[base] || 0) + 1;
+        var id = slugCounts[base] > 1 ? base + '-' + (slugCounts[base] - 1) : base;
+        h.id = id;
+      });
+
+      // serialise modified body
+      var bodyHtml = doc.body.innerHTML.trim();
+      outHtml.value = bodyHtml;
+
+      // build nested ToC
+      var lines = [];
+      var levels = headings.map(function (h) { return parseInt(h.tagName[1], 10); });
+      var minLevel = levels.length ? Math.min.apply(null, levels) : 1;
+
+      headings.forEach(function (h, i) {
+        var depth  = levels[i] - minLevel;
+        var indent = '  '.repeat(depth);
+        var text   = h.textContent.trim();
+        var id     = h.id;
+        lines.push(indent + '<li><a href="#' + escA(id) + '">' + escH(text) + '</a></li>');
+      });
+
+      outToc.value = lines.length ? '<ul>\n' + lines.join('\n') + '\n</ul>' : '';
+    }
+
+    function escH(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function escA(s) { return s.replace(/"/g,'&quot;'); }
+
+    inEl.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () { process(inEl.value); }, 250);
+    });
+
+    document.querySelectorAll('[data-copy]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var el = document.getElementById(btn.dataset.copy);
+        navigator.clipboard.writeText(el.value).then(function () {
+          var orig = btn.textContent;
+          btn.textContent = 'copied';
+          setTimeout(function () { btn.textContent = orig; }, 900);
+        });
+      });
+    });
+  })();
+</script>
+</body>
+</html>

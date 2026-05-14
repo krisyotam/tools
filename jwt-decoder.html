@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>jwt decoder — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+    --exp-ok:hsl(142 35% 92%); --exp-bad:hsl(0 35% 92%);
+    --exp-ok-dark:hsl(142 14% 18%); --exp-bad-dark:hsl(0 14% 18%);
+    --exp-ok-text:hsl(142 40% 30%); --exp-bad-text:hsl(0 40% 40%);
+  }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%;
+    --exp-ok-text:hsl(142 40% 60%); --exp-bad-text:hsl(0 40% 65%);
+  }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } }
+
+  /* tool */
+  textarea { width:100%; min-height:100px; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:12px 14px; font-family:var(--mono); font-size:12px; line-height:1.6; color:hsl(var(--fg)); outline:none; resize:vertical; transition:border-color 150ms ease; word-break:break-all; }
+  textarea:focus { border-color:hsl(var(--fg-dim)); }
+  textarea::placeholder { color:hsl(var(--muted-fg)); }
+  .parse-error { font-family:var(--mono); font-size:12px; color:hsl(0 50% 55%); margin-top:6px; min-height:18px; }
+  .section-lbl { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin:20px 0 8px; display:flex; align-items:center; justify-content:space-between; }
+  .section-lbl .copy-small { appearance:none; background:transparent; border:none; color:hsl(var(--muted-fg)); cursor:pointer; font-family:var(--mono); font-size:10px; padding:0; transition:color 120ms ease; }
+  .section-lbl .copy-small:hover { color:hsl(var(--fg)); }
+  pre { background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:12px 14px; font-family:var(--mono); font-size:12px; line-height:1.65; overflow-x:auto; white-space:pre-wrap; word-break:break-all; }
+  .claims { display:flex; flex-direction:column; gap:0; border:1px solid hsl(var(--border)); border-radius:4px; overflow:hidden; margin-top:12px; }
+  .claim-row { display:flex; align-items:baseline; gap:12px; padding:9px 14px; border-bottom:1px solid hsl(var(--rule)); }
+  .claim-row:last-child { border-bottom:none; }
+  .claim-key { font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); width:40px; flex-shrink:0; }
+  .claim-desc { font-family:var(--sans); font-size:13px; color:hsl(var(--fg-dim)); flex:1; }
+  .claim-val { font-family:var(--mono); font-size:12px; color:hsl(var(--fg)); text-align:right; }
+  .badge { font-family:var(--mono); font-size:11px; padding:2px 8px; border-radius:3px; }
+  .badge-ok { color:var(--exp-ok-text); }
+  .badge-bad { color:var(--exp-bad-text); }
+  html:not(.dark) .badge-ok { background:var(--exp-ok); }
+  html:not(.dark) .badge-bad { background:var(--exp-bad); }
+  html.dark .badge-ok { background:var(--exp-ok-dark); }
+  html.dark .badge-bad { background:var(--exp-bad-dark); }
+</style>
+</head>
+<body>
+<div class="page">
+ <div class="grow">
+ <main class="shell">
+  <div class="nav">
+    <a class="back" href="./"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+    <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+  </div>
+  <div class="head">
+    <h1>jwt decoder</h1>
+    <p>inspect a json web token</p>
+  </div>
+
+  <textarea id="jwtInput" placeholder="paste your JWT here..." spellcheck="false" autofocus></textarea>
+  <div class="parse-error" id="parseError"></div>
+
+  <div id="output" style="display:none">
+    <div class="section-lbl">header <button class="copy-small" data-copy-target="headerPre">copy</button></div>
+    <pre id="headerPre"></pre>
+
+    <div class="section-lbl">payload <button class="copy-small" data-copy-target="payloadPre">copy</button></div>
+    <pre id="payloadPre"></pre>
+
+    <div id="claimsSection" style="display:none">
+      <div class="section-lbl">standard claims</div>
+      <div class="claims" id="claimsEl"></div>
+    </div>
+
+    <div class="section-lbl">signature (hex)</div>
+    <pre id="sigPre"></pre>
+  </div>
+ </main>
+ </div>
+
+ <footer>
+  <div class="foot-inner">
+    <span>jwt decoder</span>
+    <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+  </div>
+ </footer>
+</div>
+
+<script>
+(function(){
+  var btn=document.querySelector('[data-theme-toggle]');
+  function pl(){var d=document.documentElement.classList.contains('dark');btn.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}
+  pl();btn.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}pl();});
+})();
+
+(function(){
+  var input=document.getElementById('jwtInput');
+  var errEl=document.getElementById('parseError');
+  var output=document.getElementById('output');
+  var headerPre=document.getElementById('headerPre');
+  var payloadPre=document.getElementById('payloadPre');
+  var sigPre=document.getElementById('sigPre');
+  var claimsSection=document.getElementById('claimsSection');
+  var claimsEl=document.getElementById('claimsEl');
+
+  var CLAIM_META={
+    iss:{label:'issuer',isDate:false},
+    sub:{label:'subject',isDate:false},
+    aud:{label:'audience',isDate:false},
+    exp:{label:'expires',isDate:true},
+    iat:{label:'issued at',isDate:true},
+    nbf:{label:'not before',isDate:true},
+    jti:{label:'JWT ID',isDate:false}
+  };
+
+  function b64urlDecode(s){
+    s=s.replace(/-/g,'+').replace(/_/g,'/');
+    while(s.length%4) s+='=';
+    return atob(s);
+  }
+  function b64urlToHex(s){
+    try{var bin=b64urlDecode(s);return Array.from(bin).map(function(c){return c.charCodeAt(0).toString(16).padStart(2,'0');}).join(' ');}catch(e){return s;}
+  }
+  function relTime(ts){
+    var now=Math.floor(Date.now()/1000);
+    var diff=ts-now;
+    var abs=Math.abs(diff);
+    var past=diff<0;
+    var parts=[];
+    var d=Math.floor(abs/86400);if(d)parts.push(d+'d');
+    var h=Math.floor((abs%86400)/3600);if(h)parts.push(h+'h');
+    var m=Math.floor((abs%3600)/60);if(m)parts.push(m+'m');
+    var sc=abs%60;if(sc||!parts.length)parts.push(sc+'s');
+    return (past?'-':'+')+(parts.slice(0,2).join(' '));
+  }
+  function fmtDate(ts){return new Date(ts*1000).toISOString().replace('T',' ').replace('.000Z',' UTC');}
+
+  function decode(){
+    var raw=input.value.trim();
+    if(!raw){output.style.display='none';errEl.textContent='';return;}
+    var parts=raw.split('.');
+    if(parts.length!==3){errEl.textContent='invalid JWT: must have 3 parts separated by "."';output.style.display='none';return;}
+    try{
+      var header=JSON.parse(b64urlDecode(parts[0]));
+      var payload=JSON.parse(b64urlDecode(parts[1]));
+      errEl.textContent='';
+      headerPre.textContent=JSON.stringify(header,null,2);
+      payloadPre.textContent=JSON.stringify(payload,null,2);
+      sigPre.textContent=b64urlToHex(parts[2]);
+
+      // standard claims
+      var knownKeys=Object.keys(CLAIM_META).filter(function(k){return payload[k]!==undefined;});
+      if(knownKeys.length){
+        claimsEl.innerHTML='';
+        knownKeys.forEach(function(k){
+          var meta=CLAIM_META[k];
+          var val=payload[k];
+          var row=document.createElement('div');
+          row.className='claim-row';
+          var keyEl=document.createElement('span');keyEl.className='claim-key';keyEl.textContent=k;
+          var descEl=document.createElement('span');descEl.className='claim-desc';descEl.textContent=meta.label;
+          var valEl=document.createElement('span');valEl.className='claim-val';
+          if(meta.isDate&&typeof val==='number'){
+            var now=Math.floor(Date.now()/1000);
+            var isExp=(k==='exp'||k==='nbf');
+            var expired=k==='exp'&&val<now;
+            var badge=document.createElement('span');
+            badge.className='badge '+(expired?'badge-bad':'badge-ok');
+            badge.textContent=expired?'expired':'valid';
+            valEl.textContent=fmtDate(val)+' ('+relTime(val)+') ';
+            valEl.appendChild(badge);
+          } else {
+            valEl.textContent=Array.isArray(val)?val.join(', '):String(val);
+          }
+          row.appendChild(keyEl);row.appendChild(descEl);row.appendChild(valEl);
+          claimsEl.appendChild(row);
+        });
+        claimsSection.style.display='block';
+      } else {
+        claimsSection.style.display='none';
+      }
+      output.style.display='block';
+    } catch(e){
+      errEl.textContent='decode error: '+e.message;
+      output.style.display='none';
+    }
+  }
+
+  input.addEventListener('input',decode);
+
+  document.querySelectorAll('[data-copy-target]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var el=document.getElementById(btn.dataset.copyTarget);
+      navigator.clipboard.writeText(el.textContent).then(function(){
+        var o=btn.textContent;btn.textContent='copied';setTimeout(function(){btn.textContent=o;},900);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

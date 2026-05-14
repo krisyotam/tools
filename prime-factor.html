@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>prime factor — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+
+  .lbl { display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin-bottom:6px; }
+  input[type="text"] { width:100%; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:12px 14px; font-family:var(--mono); font-size:15px; color:hsl(var(--fg)); outline:none; transition:border-color 150ms ease; margin-bottom:8px; }
+  input[type="text"]:focus { border-color:hsl(var(--fg-dim)); }
+  input[type="text"]::placeholder { color:hsl(var(--muted-fg)); }
+
+  .warn { font-family:var(--mono); font-size:11px; color:hsl(40 70% 50%); margin-bottom:12px; min-height:18px; }
+  .err { font-family:var(--mono); font-size:12px; color:hsl(0 60% 55%); margin-bottom:8px; min-height:18px; }
+
+  .result-block { margin-top:20px; }
+  .result-lbl { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin-bottom:8px; }
+  .factored { font-family:var(--mono); font-size:18px; color:hsl(var(--fg)); margin-bottom:14px; word-break:break-all; line-height:1.6; }
+  .flat { font-family:var(--mono); font-size:13px; color:hsl(var(--fg-dim)); margin-bottom:20px; word-break:break-all; }
+
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:0; border-top:1px solid hsl(var(--rule)); border-bottom:1px solid hsl(var(--rule)); }
+  .stat { padding:14px 4px; border-right:1px solid hsl(var(--rule)); }
+  .stat:last-child { border-right:none; }
+  .stat-value { font-family:var(--mono); font-size:18px; color:hsl(var(--fg)); font-weight:500; margin-bottom:3px; letter-spacing:-0.01em; }
+  .stat-label { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); }
+
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } .stats { grid-template-columns:repeat(2,1fr); } .stat:nth-child(2) { border-right:none; } .stat:nth-child(1),.stat:nth-child(2) { border-bottom:1px solid hsl(var(--rule)); } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="./"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>prime factor</h1>
+      <p>prime factorization with exponent form</p>
+    </div>
+
+    <label class="lbl" for="num-in">positive integer</label>
+    <input type="text" id="num-in" placeholder="e.g. 360 or 9999999999999937" autofocus autocomplete="off" spellcheck="false">
+    <div class="warn" id="warn-msg"></div>
+    <div class="err" id="err-msg"></div>
+
+    <div class="result-block" id="result-block" style="display:none">
+      <div class="result-lbl">canonical form</div>
+      <div class="factored" id="factored"></div>
+      <div class="result-lbl">flat factors</div>
+      <div class="flat" id="flat"></div>
+      <div class="stats">
+        <div class="stat"><div class="stat-value" id="stat-total">—</div><div class="stat-label">total primes</div></div>
+        <div class="stat"><div class="stat-value" id="stat-distinct">—</div><div class="stat-label">distinct</div></div>
+        <div class="stat"><div class="stat-value" id="stat-divisors">—</div><div class="stat-label">divisors</div></div>
+        <div class="stat"><div class="stat-value" id="stat-sigma">—</div><div class="stat-label">sigma</div></div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>prime factor</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  (function(){
+    var inp = document.getElementById('num-in');
+    var warnEl = document.getElementById('warn-msg');
+    var errEl = document.getElementById('err-msg');
+    var resultBlock = document.getElementById('result-block');
+    var factoredEl = document.getElementById('factored');
+    var flatEl = document.getElementById('flat');
+    var statTotal = document.getElementById('stat-total');
+    var statDistinct = document.getElementById('stat-distinct');
+    var statDivisors = document.getElementById('stat-divisors');
+    var statSigma = document.getElementById('stat-sigma');
+
+    var SUP = ['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹'];
+    function toSup(n) {
+      return String(n).split('').map(function(d){ return SUP[parseInt(d,10)]; }).join('');
+    }
+
+    function factorize(n) {
+      // wheel factorization: 2,3,5 then increments by [4,2,4,2,4,6,2,6]
+      var factors = [];
+      var wheel = [4n,2n,4n,2n,4n,6n,2n,6n];
+      var small = [2n,3n,5n];
+      for (var i = 0; i < small.length; i++) {
+        var p = small[i];
+        while (n % p === 0n) { factors.push(p); n /= p; }
+      }
+      var k = 7n, wi = 0;
+      while (k * k <= n) {
+        while (n % k === 0n) { factors.push(k); n /= k; }
+        k += wheel[wi];
+        wi = (wi + 1) % 8;
+      }
+      if (n > 1n) factors.push(n);
+      return factors;
+    }
+
+    function fmtBig(n) {
+      var s = n.toString();
+      if (s.length > 15) return s.slice(0,6) + '…' + s.slice(-4);
+      return s;
+    }
+
+    function compute() {
+      var s = inp.value.trim();
+      errEl.textContent = '';
+      warnEl.textContent = '';
+      resultBlock.style.display = 'none';
+      if (!s) return;
+      if (!/^[0-9]+$/.test(s)) { errEl.textContent = 'enter a positive integer'; return; }
+      var n;
+      try { n = BigInt(s); } catch(e) { errEl.textContent = 'invalid number'; return; }
+      if (n < 2n) { errEl.textContent = 'must be >= 2'; return; }
+      if (n > 10n**18n) { warnEl.textContent = 'large number — may be slow for numbers > 10^18 with large prime factors'; }
+
+      var factors = factorize(n);
+
+      // build exponent map
+      var map = [];
+      var seen = {};
+      factors.forEach(function(p) {
+        var ps = p.toString();
+        if (seen[ps] === undefined) { seen[ps] = map.length; map.push({p: p, e: 0}); }
+        map[seen[ps]].e++;
+      });
+
+      // canonical form
+      var parts = map.map(function(m) {
+        return m.p.toString() + (m.e > 1 ? toSup(m.e) : '');
+      });
+      factoredEl.textContent = parts.join(' \u00d7 ');
+
+      // flat
+      flatEl.textContent = factors.map(function(f){ return f.toString(); }).join(', ');
+
+      // divisor count = product of (e+1)
+      var divCount = map.reduce(function(acc, m){ return acc * BigInt(m.e + 1); }, 1n);
+
+      // sigma (sum of divisors) = product of (p^(e+1)-1)/(p-1)
+      var sigma = map.reduce(function(acc, m) {
+        var num = BigInt(1);
+        for (var i = 0; i <= m.e; i++) num += m.p ** BigInt(i);
+        return acc * num;
+      }, 1n);
+
+      statTotal.textContent = factors.length;
+      statDistinct.textContent = map.length;
+      statDivisors.textContent = divCount <= 999999n ? divCount.toString() : fmtBig(divCount);
+      statSigma.textContent = sigma <= 999999n ? sigma.toString() : fmtBig(sigma);
+
+      resultBlock.style.display = '';
+    }
+
+    inp.addEventListener('input', compute);
+    compute();
+  })();
+</script>
+</body>
+</html>

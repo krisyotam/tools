@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:         0 0% 100%;
+    --fg:         0 0% 20%;
+    --fg-dim:     0 0% 35%;
+    --muted:      0 0% 92%;
+    --muted-fg:   0 0% 50%;
+    --border:     0 0% 88%;
+    --rule:       0 0% 82%;
+    --accent:     0 0% 96%;
+
+    --serif: 'Lora', ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+    --sans:  'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono:  'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  html.dark {
+    --bg:         0 0% 7%;
+    --fg:         0 0% 96%;
+    --fg-dim:     0 0% 78%;
+    --muted:      0 0% 12%;
+    --muted-fg:   0 0% 60%;
+    --border:     0 0% 17%;
+    --rule:       0 0% 22%;
+    --accent:     0 0% 11%;
+  }
+  html.dark { color-scheme: dark; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body {
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  /* page wrapper — matches krisyotam.com `min-h-screen flex flex-col` */
+  .page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .grow { flex-grow: 1; }
+
+  .shell {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 80px 32px 56px;
+  }
+
+  /* ── header ──────────────────────────────────────────────────── */
+  .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 48px;
+  }
+  .brand h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 32px;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+  .brand p {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    color: hsl(var(--muted-fg));
+  }
+  .toggle {
+    appearance: none;
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--fg-dim));
+    width: 32px; height: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  .toggle:hover { background: hsl(var(--accent)); color: hsl(var(--fg)); border-color: hsl(var(--rule)); }
+  .toggle svg { width: 16px; height: 16px; }
+  .toggle .icon-sun { display: none; }
+  .toggle .icon-moon { display: block; }
+  html.dark .toggle .icon-sun { display: block; }
+  html.dark .toggle .icon-moon { display: none; }
+
+  /* ── search ──────────────────────────────────────────────────── */
+  .search { position: relative; margin-bottom: 28px; }
+  .search input {
+    width: 100%;
+    appearance: none;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid hsl(var(--rule));
+    padding: 10px 0 10px 22px;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: hsl(var(--fg));
+    outline: none;
+    transition: border-color 150ms ease;
+  }
+  .search input:focus { border-color: hsl(var(--fg-dim)); }
+  .search input::placeholder { color: hsl(var(--muted-fg)); }
+  .search-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: hsl(var(--muted-fg)); pointer-events: none; }
+  .search-kbd {
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: hsl(var(--muted-fg));
+    background: hsl(var(--accent));
+    border: 1px solid hsl(var(--border));
+    border-radius: 3px;
+    padding: 2px 6px;
+    pointer-events: none;
+  }
+  .search input:focus + .search-kbd { display: none; }
+
+  /* ── table ───────────────────────────────────────────────────── */
+  table.tools {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  table.tools tbody tr {
+    transition: background 100ms ease;
+  }
+  table.tools tbody tr:hover { background: hsl(var(--accent)); }
+  table.tools tbody td {
+    padding: 10px 16px 10px 8px;
+    vertical-align: top;
+    border: none;
+  }
+  table.tools tbody td:first-child { padding-left: 8px; }
+  table.tools tbody td:last-child  { padding-right: 8px; }
+
+  .col-name { width: 38%; }
+  .col-cat  { width: 18%; }
+
+  td.name a {
+    color: hsl(var(--fg));
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease;
+  }
+  td.name a:hover { border-bottom-color: hsl(var(--rule)); }
+  td.name span.unbuilt { color: hsl(var(--muted-fg)); font-weight: 400; }
+
+  td.cat {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: hsl(var(--muted-fg));
+  }
+  td.desc {
+    font-family: var(--serif);
+    font-size: 14px;
+    color: hsl(var(--muted-fg));
+    line-height: 1.5;
+  }
+
+  tr.hidden { display: none; }
+
+  .empty {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    color: hsl(var(--muted-fg));
+    padding: 28px 8px;
+    display: none;
+  }
+  .empty.show { display: block; }
+
+  /* ── footer (within column) ──────────────────────────────────── */
+  footer {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 32px 28px;
+  }
+  .foot-inner {
+    padding-top: 18px;
+    border-top: 1px solid hsl(var(--rule));
+    font-family: var(--mono);
+    font-size: 11px;
+    color: hsl(var(--muted-fg));
+    display: flex;
+    justify-content: space-between;
+  }
+  footer a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: hsl(var(--border));
+  }
+  footer a:hover { text-decoration-color: hsl(var(--muted-fg)); }
+
+  @media (max-width: 560px) {
+    .shell { padding: 56px 22px 40px; }
+    footer { padding: 12px 22px 24px; }
+    table.tools, table.tools tbody, table.tools tr, table.tools td { display: block; width: 100%; }
+    table.tools tbody tr { padding: 12px 8px; }
+    table.tools tbody tr:hover { background: hsl(var(--accent)); }
+    table.tools tbody td { padding: 1px 0; }
+    table.tools tbody td:first-child, table.tools tbody td:last-child { padding-left: 0; padding-right: 0; }
+    td.name { font-size: 15px; margin-bottom: 2px; }
+    td.cat { display: inline-block; font-size: 11px; }
+    td.cat::after { content: ' · '; color: hsl(var(--rule)); margin: 0 2px; }
+    td.desc { display: inline; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="head">
+      <div class="brand">
+        <h1>tools</h1>
+        <p>a personal workshop of small utilities</p>
+      </div>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark">
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      </button>
+    </div>
+
+    <div class="search">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+      <input id="q" type="text" placeholder="search" autocomplete="off" spellcheck="false">
+      <kbd class="search-kbd">/</kbd>
+    </div>
+
+    <table class="tools" id="tools">
+      <colgroup>
+        <col class="col-name">
+        <col class="col-cat">
+        <col>
+      </colgroup>
+      <tbody><!-- populated from tools.json --></tbody>
+    </table>
+
+    <p class="empty">nothing matches.</p>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span><span data-visible-count>0</span> / <span data-total-count>0</span> tools · <span data-built-count>0</span> built</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  // theme toggle (do not modify)
+  (function () {
+    var btn = document.querySelector('[data-theme-toggle]');
+    function paintLabel() {
+      var dark = document.documentElement.classList.contains('dark');
+      btn.setAttribute('aria-label', dark ? 'Switch to light' : 'Switch to dark');
+    }
+    paintLabel();
+    btn.addEventListener('click', function () {
+      var h = document.documentElement;
+      var dark = h.classList.contains('dark');
+      h.classList.remove('dark', 'light');
+      var next = dark ? 'light' : 'dark';
+      h.classList.add(next);
+      try { localStorage.setItem('tools-theme', next); } catch (e) {}
+      paintLabel();
+    });
+  })();
+
+  // escape for safe innerHTML
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // load tools.json → render rows → wire search
+  (async function () {
+    var input = document.getElementById('q');
+    var empty = document.querySelector('.empty');
+    var visEl = document.querySelector('[data-visible-count]');
+    var totalEl = document.querySelector('[data-total-count]');
+    var builtEl = document.querySelector('[data-built-count]');
+    var tbody = document.querySelector('#tools tbody');
+
+    function filter() {
+      var q = input.value.trim().toLowerCase();
+      var rows = tbody.querySelectorAll('tr');
+      var visible = 0;
+      rows.forEach(function (tr) {
+        if (!q) { tr.classList.remove('hidden'); visible++; return; }
+        var hay = (tr.dataset.name + ' ' + tr.dataset.cat + ' ' + tr.dataset.desc).toLowerCase();
+        var match = hay.indexOf(q) !== -1;
+        tr.classList.toggle('hidden', !match);
+        if (match) visible++;
+      });
+      visEl.textContent = visible;
+      empty.classList.toggle('show', visible === 0);
+    }
+
+    try {
+      var res = await fetch('tools.json', { cache: 'no-cache' });
+      var data = await res.json();
+      var rows = data.tools.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+      var html = '';
+      rows.forEach(function (t) {
+        var keys = (t.keywords || []).join(' ');
+        var dataDesc = (keys + ' ' + (t.description || '')).trim();
+        var nameCell = t.built
+          ? '<a href="' + esc(t.slug) + '.html">' + esc(t.name) + '</a>'
+          : '<span class="unbuilt">' + esc(t.name) + '</span>';
+        html += '<tr data-name="' + esc(t.name) + '" data-cat="' + esc(t.category) + '" data-desc="' + esc(dataDesc) + '">'
+              + '<td class="name">' + nameCell + '</td>'
+              + '<td class="cat">' + esc(t.category) + '</td>'
+              + '<td class="desc">' + esc(t.description || '') + '</td>'
+              + '</tr>';
+      });
+      tbody.innerHTML = html;
+      totalEl.textContent = data.tools.length;
+      builtEl.textContent = data.tools.filter(function (t) { return t.built; }).length;
+      filter();
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="3" class="desc">failed to load tools.json — ' + esc(e.message) + '</td></tr>';
+    }
+
+    input.addEventListener('input', filter);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === '/' && document.activeElement !== input) { e.preventDefault(); input.focus(); }
+      if (e.key === 'Escape' && document.activeElement === input) { input.value = ''; filter(); input.blur(); }
+    });
+  })();
+</script>
+</body>
+</html>

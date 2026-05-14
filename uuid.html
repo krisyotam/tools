@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>uuid — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+
+  .controls { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  .modes { display:flex; gap:0; border:1px solid hsl(var(--border)); border-radius:4px; padding:2px; width:fit-content; }
+  .mode-btn { appearance:none; background:transparent; border:none; padding:6px 14px; font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); cursor:pointer; border-radius:3px; transition:background 120ms ease, color 120ms ease; }
+  .mode-btn[aria-pressed="true"] { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  .count-wrap { display:flex; align-items:center; gap:6px; }
+  .count-lbl { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); }
+  input[type="number"] { width:56px; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:6px 8px; font-family:var(--mono); font-size:12px; color:hsl(var(--fg)); outline:none; transition:border-color 150ms ease; }
+  input[type="number"]:focus { border-color:hsl(var(--fg-dim)); }
+  .actions { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .regen-btn { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:5px 12px; font-family:var(--mono); font-size:11px; border-radius:3px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .regen-btn:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  .copy-all { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:5px 12px; font-family:var(--mono); font-size:11px; border-radius:3px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .copy-all:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  .uuid-list { border-top:1px solid hsl(var(--rule)); }
+  .uuid-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid hsl(var(--rule)); }
+  .uuid-val { font-family:var(--mono); font-size:13px; color:hsl(var(--fg)); flex:1; word-break:break-all; }
+  .uuid-copy { appearance:none; background:transparent; border:none; color:hsl(var(--muted-fg)); cursor:pointer; padding:2px 4px; border-radius:3px; display:inline-flex; align-items:center; transition:color 120ms ease; }
+  .uuid-copy:hover { color:hsl(var(--fg)); }
+  .uuid-copy svg { width:14px; height:14px; }
+
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } .uuid-val { font-size:11px; } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="./"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>uuid</h1>
+      <p>generate v4 and v7 identifiers</p>
+    </div>
+
+    <div class="controls">
+      <div class="modes" role="group" aria-label="Version">
+        <button class="mode-btn" data-mode="v4" aria-pressed="true">v4</button>
+        <button class="mode-btn" data-mode="v7" aria-pressed="false">v7</button>
+      </div>
+      <div class="count-wrap">
+        <label class="count-lbl" for="count">count</label>
+        <input type="number" id="count" value="10" min="1" max="100">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="regen-btn" id="regen">regenerate</button>
+      <button class="copy-all" id="copy-all">copy all</button>
+    </div>
+
+    <div class="uuid-list" id="uuid-list"></div>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>uuid</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  (function(){
+    var mode = 'v4';
+    var countEl = document.getElementById('count');
+    var listEl = document.getElementById('uuid-list');
+
+    function uuidv4() {
+      return crypto.randomUUID();
+    }
+
+    function uuidv7() {
+      var now = Date.now();
+      // 48-bit timestamp ms
+      var hi = Math.floor(now / 0x100000000);
+      var lo = now >>> 0;
+      var rand = new Uint8Array(10);
+      crypto.getRandomValues(rand);
+      // Build 16 bytes
+      var b = new Uint8Array(16);
+      b[0] = (hi >> 8) & 0xff;
+      b[1] = hi & 0xff;
+      b[2] = (lo >> 24) & 0xff;
+      b[3] = (lo >> 16) & 0xff;
+      b[4] = (lo >> 8) & 0xff;
+      b[5] = lo & 0xff;
+      // version nibble (4 bits ver=7) + 12 bits rand
+      b[6] = 0x70 | (rand[0] & 0x0f);
+      b[7] = rand[1];
+      // variant bits (10xx) + 62 bits rand
+      b[8] = 0x80 | (rand[2] & 0x3f);
+      b[9] = rand[3];
+      for (var i=0;i<6;i++) b[10+i]=rand[4+i];
+      var hex = Array.from(b).map(function(x){return x.toString(16).padStart(2,'0');}).join('');
+      return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
+    }
+
+    var copySvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+
+    function generate() {
+      var n = Math.max(1, Math.min(100, parseInt(countEl.value,10)||10));
+      var uuids = [];
+      for (var i=0;i<n;i++) uuids.push(mode==='v4'?uuidv4():uuidv7());
+      listEl.innerHTML = '';
+      uuids.forEach(function(u) {
+        var row = document.createElement('div');
+        row.className = 'uuid-row';
+        var val = document.createElement('span');
+        val.className = 'uuid-val';
+        val.textContent = u;
+        var btn = document.createElement('button');
+        btn.className = 'uuid-copy';
+        btn.setAttribute('aria-label','Copy UUID');
+        btn.innerHTML = copySvg;
+        btn.addEventListener('click', function(){
+          navigator.clipboard.writeText(u).then(function(){
+            btn.style.color = 'hsl(var(--fg))';
+            setTimeout(function(){ btn.style.color=''; }, 900);
+          });
+        });
+        row.appendChild(val);
+        row.appendChild(btn);
+        listEl.appendChild(row);
+      });
+      listEl._uuids = uuids;
+    }
+
+    document.querySelectorAll('.mode-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        mode = btn.dataset.mode;
+        document.querySelectorAll('.mode-btn').forEach(function(b){ b.setAttribute('aria-pressed', String(b===btn)); });
+        generate();
+      });
+    });
+
+    document.getElementById('regen').addEventListener('click', generate);
+    countEl.addEventListener('change', generate);
+
+    document.getElementById('copy-all').addEventListener('click', function(){
+      var uuids = listEl._uuids || [];
+      navigator.clipboard.writeText(uuids.join('\n')).then(function(){
+        var btn = document.getElementById('copy-all');
+        var o = btn.textContent; btn.textContent = 'copied';
+        setTimeout(function(){ btn.textContent = o; }, 900);
+      });
+    });
+
+    generate();
+  })();
+</script>
+</body>
+</html>

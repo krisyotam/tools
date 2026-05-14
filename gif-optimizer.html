@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>gif optimizer — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- dep: gifuct-js (GIF frame parser) -->
+<script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
+<!-- dep: gif.js (GIF encoder) -->
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+
+  .note { font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:10px 14px; margin-bottom:20px; line-height:1.6; }
+
+  label.lbl { display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin:0 0 6px; }
+  .file-label { display:inline-flex; align-items:center; gap:8px; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:10px 16px; font-family:var(--mono); font-size:12px; color:hsl(var(--fg-dim)); cursor:pointer; transition:border-color 150ms ease; }
+  .file-label:hover { border-color:hsl(var(--fg-dim)); color:hsl(var(--fg)); }
+  input[type="file"] { display:none; }
+
+  .controls { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; }
+  .ctrl-group { display:flex; flex-direction:column; gap:6px; }
+  .ctrl-group label.lbl { margin:0; }
+  .ctrl-row { display:flex; align-items:center; gap:10px; }
+  input[type="number"] { width:80px; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:3px; padding:6px 10px; font-family:var(--mono); font-size:13px; color:hsl(var(--fg)); outline:none; transition:border-color 150ms ease; }
+  input[type="number"]:focus { border-color:hsl(var(--fg-dim)); }
+  input[type="range"] { flex:1; accent-color:hsl(var(--fg-dim)); }
+  .val { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); min-width:24px; }
+
+  .sep { margin:24px 0; border:none; border-top:1px solid hsl(var(--rule)); }
+
+  .btn { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:8px 16px; font-family:var(--mono); font-size:12px; border-radius:3px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .btn:hover:not(:disabled) { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  .btn:disabled { opacity:0.4; cursor:default; }
+
+  .preview { display:flex; gap:24px; flex-wrap:wrap; margin-top:20px; }
+  .pv-block { flex:1; min-width:160px; }
+  .pv-block .pv-lbl { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin-bottom:8px; }
+  .pv-block img { max-width:100%; border:1px solid hsl(var(--border)); border-radius:4px; display:block; }
+  .pv-block .size { font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); margin-top:4px; }
+
+  .progress { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); margin-top:12px; display:none; }
+  .progress.visible { display:block; }
+
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } .controls { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="./"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>gif optimizer</h1>
+      <p>reduce gif file size</p>
+    </div>
+
+    <p class="note">Frames are decoded via gifuct-js, scaled on canvas, then re-encoded with gif.js. Palette dithering is handled by gif.js. For very large GIFs (&gt;5 MB, &gt;100 frames) encoding may take a moment.</p>
+
+    <label class="lbl" for="gif-file">gif file</label>
+    <label class="file-label" for="gif-file">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span id="file-name">choose gif…</span>
+    </label>
+    <input type="file" id="gif-file" accept=".gif,image/gif">
+
+    <div class="controls">
+      <div class="ctrl-group">
+        <label class="lbl" for="max-w">max width (px)</label>
+        <input type="number" id="max-w" value="480" min="16" max="2000" step="1">
+      </div>
+      <div class="ctrl-group">
+        <label class="lbl" for="quality">quality (1=best, 30=smallest)</label>
+        <div class="ctrl-row">
+          <input type="range" id="quality" min="1" max="30" value="10">
+          <span class="val" id="qual-val">10</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <button class="btn" id="run-btn" disabled>optimize</button>
+      <button class="btn" id="dl-btn" disabled style="margin-left:8px;">download</button>
+    </div>
+    <div class="progress" id="progress">encoding…</div>
+
+    <hr class="sep">
+
+    <div class="preview">
+      <div class="pv-block" id="pv-before" style="display:none;">
+        <div class="pv-lbl">before</div>
+        <img id="img-before" alt="original">
+        <div class="size" id="sz-before"></div>
+      </div>
+      <div class="pv-block" id="pv-after" style="display:none;">
+        <div class="pv-lbl">after</div>
+        <img id="img-after" alt="optimized">
+        <div class="size" id="sz-after"></div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>gif optimizer</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  (function () {
+    var fileIn   = document.getElementById('gif-file');
+    var fileName = document.getElementById('file-name');
+    var maxWIn   = document.getElementById('max-w');
+    var qualIn   = document.getElementById('quality');
+    var qualVal  = document.getElementById('qual-val');
+    var runBtn   = document.getElementById('run-btn');
+    var dlBtn    = document.getElementById('dl-btn');
+    var progress = document.getElementById('progress');
+    var imgBefore = document.getElementById('img-before');
+    var szBefore  = document.getElementById('sz-before');
+    var pvBefore  = document.getElementById('pv-before');
+    var imgAfter  = document.getElementById('img-after');
+    var szAfter   = document.getElementById('sz-after');
+    var pvAfter   = document.getElementById('pv-after');
+
+    var origFile = null;
+    var outputBlob = null;
+
+    qualIn.addEventListener('input', function () { qualVal.textContent = qualIn.value; });
+
+    fileIn.addEventListener('change', function () {
+      var f = fileIn.files[0];
+      if (!f) return;
+      origFile = f;
+      fileName.textContent = f.name;
+      runBtn.disabled = false;
+      dlBtn.disabled  = true;
+      outputBlob = null;
+
+      var url = URL.createObjectURL(f);
+      imgBefore.src = url;
+      pvBefore.style.display = 'block';
+      pvAfter.style.display  = 'none';
+      szBefore.textContent   = fmtSize(f.size);
+    });
+
+    function fmtSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+      return (bytes/(1024*1024)).toFixed(2) + ' MB';
+    }
+
+    runBtn.addEventListener('click', function () {
+      if (!origFile) return;
+      var maxW = parseInt(maxWIn.value, 10) || 480;
+      var qual = parseInt(qualIn.value, 10) || 10;
+
+      runBtn.disabled = true;
+      progress.textContent = 'decoding…';
+      progress.classList.add('visible');
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var ab = e.target.result;
+        var gif;
+        try {
+          gif = gifuct.parseGIF(ab);
+        } catch(ex) {
+          progress.textContent = 'parse error: ' + ex.message;
+          runBtn.disabled = false;
+          return;
+        }
+        var frames = gifuct.decompressFrames(gif, true);
+        if (!frames || !frames.length) {
+          progress.textContent = 'no frames decoded.';
+          runBtn.disabled = false;
+          return;
+        }
+
+        var origW = frames[0].dims.width;
+        var origH = frames[0].dims.height;
+        var scale = Math.min(1, maxW / origW);
+        var outW  = Math.round(origW * scale);
+        var outH  = Math.round(origH * scale);
+
+        progress.textContent = 'encoding ' + frames.length + ' frame(s) at ' + outW + '\xd7' + outH + '…';
+
+        var encoder = new GIF({
+          workers: 2,
+          quality: qual,
+          width:   outW,
+          height:  outH,
+          workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+        });
+
+        var tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width  = outW;
+        tmpCanvas.height = outH;
+        var ctx = tmpCanvas.getContext('2d');
+
+        // patch canvas: draw each frame using its pixel data
+        var patchCanvas = document.createElement('canvas');
+        patchCanvas.width  = origW;
+        patchCanvas.height = origH;
+        var pctx = patchCanvas.getContext('2d');
+
+        frames.forEach(function (frame) {
+          var imageData = pctx.createImageData(frame.dims.width, frame.dims.height);
+          imageData.data.set(frame.patch);
+          pctx.putImageData(imageData, frame.dims.left, frame.dims.top);
+          ctx.clearRect(0, 0, outW, outH);
+          ctx.drawImage(patchCanvas, 0, 0, outW, outH);
+          encoder.addFrame(ctx, { copy: true, delay: frame.delay || 100 });
+        });
+
+        encoder.on('finished', function (blob) {
+          outputBlob = blob;
+          var url = URL.createObjectURL(blob);
+          imgAfter.src = url;
+          pvAfter.style.display = 'block';
+          szAfter.textContent   = fmtSize(blob.size);
+          progress.classList.remove('visible');
+          runBtn.disabled = false;
+          dlBtn.disabled  = false;
+        });
+
+        encoder.on('error', function (err) {
+          progress.textContent = 'encode error: ' + err;
+          runBtn.disabled = false;
+        });
+
+        encoder.render();
+      };
+      reader.readAsArrayBuffer(origFile);
+    });
+
+    dlBtn.addEventListener('click', function () {
+      if (!outputBlob) return;
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(outputBlob);
+      a.download = (origFile ? origFile.name.replace(/\.gif$/i,'') : 'output') + '-opt.gif';
+      a.click();
+    });
+  })();
+</script>
+</body>
+</html>
