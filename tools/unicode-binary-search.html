@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>unicode binary search — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+
+  label.lbl { display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin:0 0 6px; }
+  input[type="text"] { width:100%; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:10px 14px; font-family:var(--mono); font-size:14px; color:hsl(var(--fg)); outline:none; transition:border-color 150ms ease; }
+  input:focus { border-color:hsl(var(--fg-dim)); }
+  input::placeholder { color:hsl(var(--muted-fg)); }
+  .hint { font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); margin-top:6px; margin-bottom:20px; }
+  .results { margin-top:4px; }
+  .result-item { display:grid; grid-template-columns:48px 1fr; gap:0 16px; align-items:start; padding:14px 0; border-bottom:1px solid hsl(var(--border)); }
+  .result-item:last-child { border-bottom:none; }
+  .glyph { font-size:32px; line-height:1; grid-row:1/3; align-self:center; }
+  .cp { font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); margin-bottom:2px; }
+  .name { font-family:var(--serif); font-size:14px; font-weight:500; color:hsl(var(--fg)); margin-bottom:2px; }
+  .meta { font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); }
+  .empty { font-family:var(--mono); font-size:13px; color:hsl(var(--muted-fg)); padding:20px 0; }
+
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } .glyph { font-size:24px; } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="/tools/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>unicode binary search</h1>
+      <p>search the unicode database</p>
+    </div>
+
+    <label class="lbl" for="q">character or name</label>
+    <input type="text" id="q" placeholder="arrow, greek, ½, ©…" autofocus autocomplete="off" spellcheck="false">
+    <div class="hint">type a character to look it up, or search by name/keyword</div>
+    <div class="results" id="results"></div>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>unicode binary search</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  // Curated Unicode dataset: [codepoint, name, block, category]
+  // ~600 entries covering Latin Extended, Greek, Cyrillic, Math, Currency, Arrows,
+  // Dingbats, IPA, Punctuation, Letterlike Symbols, Geometric Shapes, Box Drawing, etc.
+  var DATA = [
+    // Basic Latin / C0
+    [0x0021,'EXCLAMATION MARK','Basic Latin','Po'],
+    [0x0022,'QUOTATION MARK','Basic Latin','Po'],
+    [0x0023,'NUMBER SIGN','Basic Latin','Po'],
+    [0x0024,'DOLLAR SIGN','Basic Latin','Sc'],
+    [0x0025,'PERCENT SIGN','Basic Latin','Po'],
+    [0x0026,'AMPERSAND','Basic Latin','Po'],
+    [0x0027,'APOSTROPHE','Basic Latin','Po'],
+    [0x002A,'ASTERISK','Basic Latin','Po'],
+    [0x002B,'PLUS SIGN','Basic Latin','Sm'],
+    [0x003C,'LESS-THAN SIGN','Basic Latin','Sm'],
+    [0x003D,'EQUALS SIGN','Basic Latin','Sm'],
+    [0x003E,'GREATER-THAN SIGN','Basic Latin','Sm'],
+    [0x003F,'QUESTION MARK','Basic Latin','Po'],
+    [0x0040,'COMMERCIAL AT','Basic Latin','Po'],
+    [0x005C,'REVERSE SOLIDUS','Basic Latin','Po'],
+    [0x005E,'CIRCUMFLEX ACCENT','Basic Latin','Sk'],
+    [0x005F,'LOW LINE','Basic Latin','Pc'],
+    [0x0060,'GRAVE ACCENT','Basic Latin','Sk'],
+    [0x007C,'VERTICAL LINE','Basic Latin','Po'],
+    [0x007E,'TILDE','Basic Latin','Sm'],
+    // Latin-1 Supplement
+    [0x00A0,'NO-BREAK SPACE','Latin-1 Supplement','Zs'],
+    [0x00A1,'INVERTED EXCLAMATION MARK','Latin-1 Supplement','Po'],
+    [0x00A2,'CENT SIGN','Latin-1 Supplement','Sc'],
+    [0x00A3,'POUND SIGN','Latin-1 Supplement','Sc'],
+    [0x00A4,'CURRENCY SIGN','Latin-1 Supplement','Sc'],
+    [0x00A5,'YEN SIGN','Latin-1 Supplement','Sc'],
+    [0x00A6,'BROKEN BAR','Latin-1 Supplement','So'],
+    [0x00A7,'SECTION SIGN','Latin-1 Supplement','Po'],
+    [0x00A8,'DIAERESIS','Latin-1 Supplement','Sk'],
+    [0x00A9,'COPYRIGHT SIGN','Latin-1 Supplement','So'],
+    [0x00AA,'FEMININE ORDINAL INDICATOR','Latin-1 Supplement','Lo'],
+    [0x00AB,'LEFT-POINTING DOUBLE ANGLE QUOTATION MARK','Latin-1 Supplement','Pi'],
+    [0x00AC,'NOT SIGN','Latin-1 Supplement','Sm'],
+    [0x00AE,'REGISTERED SIGN','Latin-1 Supplement','So'],
+    [0x00AF,'MACRON','Latin-1 Supplement','Sk'],
+    [0x00B0,'DEGREE SIGN','Latin-1 Supplement','So'],
+    [0x00B1,'PLUS-MINUS SIGN','Latin-1 Supplement','Sm'],
+    [0x00B2,'SUPERSCRIPT TWO','Latin-1 Supplement','No'],
+    [0x00B3,'SUPERSCRIPT THREE','Latin-1 Supplement','No'],
+    [0x00B4,'ACUTE ACCENT','Latin-1 Supplement','Sk'],
+    [0x00B5,'MICRO SIGN','Latin-1 Supplement','Ll'],
+    [0x00B6,'PILCROW SIGN','Latin-1 Supplement','Po'],
+    [0x00B7,'MIDDLE DOT','Latin-1 Supplement','Po'],
+    [0x00B8,'CEDILLA','Latin-1 Supplement','Sk'],
+    [0x00B9,'SUPERSCRIPT ONE','Latin-1 Supplement','No'],
+    [0x00BA,'MASCULINE ORDINAL INDICATOR','Latin-1 Supplement','Lo'],
+    [0x00BB,'RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK','Latin-1 Supplement','Pf'],
+    [0x00BC,'VULGAR FRACTION ONE QUARTER','Latin-1 Supplement','No'],
+    [0x00BD,'VULGAR FRACTION ONE HALF','Latin-1 Supplement','No'],
+    [0x00BE,'VULGAR FRACTION THREE QUARTERS','Latin-1 Supplement','No'],
+    [0x00BF,'INVERTED QUESTION MARK','Latin-1 Supplement','Po'],
+    [0x00C6,'LATIN CAPITAL LETTER AE','Latin-1 Supplement','Lu'],
+    [0x00D0,'LATIN CAPITAL LETTER ETH','Latin-1 Supplement','Lu'],
+    [0x00D7,'MULTIPLICATION SIGN','Latin-1 Supplement','Sm'],
+    [0x00D8,'LATIN CAPITAL LETTER O WITH STROKE','Latin-1 Supplement','Lu'],
+    [0x00DE,'LATIN CAPITAL LETTER THORN','Latin-1 Supplement','Lu'],
+    [0x00DF,'LATIN SMALL LETTER SHARP S','Latin-1 Supplement','Ll'],
+    [0x00E6,'LATIN SMALL LETTER AE','Latin-1 Supplement','Ll'],
+    [0x00F0,'LATIN SMALL LETTER ETH','Latin-1 Supplement','Ll'],
+    [0x00F7,'DIVISION SIGN','Latin-1 Supplement','Sm'],
+    [0x00F8,'LATIN SMALL LETTER O WITH STROKE','Latin-1 Supplement','Ll'],
+    [0x00FE,'LATIN SMALL LETTER THORN','Latin-1 Supplement','Ll'],
+    [0x00FF,'LATIN SMALL LETTER Y WITH DIAERESIS','Latin-1 Supplement','Ll'],
+    // Latin Extended-A
+    [0x0100,'LATIN CAPITAL LETTER A WITH MACRON','Latin Extended-A','Lu'],
+    [0x0101,'LATIN SMALL LETTER A WITH MACRON','Latin Extended-A','Ll'],
+    [0x0110,'LATIN CAPITAL LETTER D WITH STROKE','Latin Extended-A','Lu'],
+    [0x0111,'LATIN SMALL LETTER D WITH STROKE','Latin Extended-A','Ll'],
+    [0x0126,'LATIN CAPITAL LETTER H WITH STROKE','Latin Extended-A','Lu'],
+    [0x0127,'LATIN SMALL LETTER H WITH STROKE','Latin Extended-A','Ll'],
+    [0x0131,'LATIN SMALL LETTER DOTLESS I','Latin Extended-A','Ll'],
+    [0x0132,'LATIN CAPITAL LIGATURE IJ','Latin Extended-A','Lu'],
+    [0x0133,'LATIN SMALL LIGATURE IJ','Latin Extended-A','Ll'],
+    [0x0138,'LATIN SMALL LETTER KRA','Latin Extended-A','Ll'],
+    [0x013F,'LATIN CAPITAL LETTER L WITH MIDDLE DOT','Latin Extended-A','Lu'],
+    [0x0141,'LATIN CAPITAL LETTER L WITH STROKE','Latin Extended-A','Lu'],
+    [0x0142,'LATIN SMALL LETTER L WITH STROKE','Latin Extended-A','Ll'],
+    [0x014A,'LATIN CAPITAL LETTER ENG','Latin Extended-A','Lu'],
+    [0x014B,'LATIN SMALL LETTER ENG','Latin Extended-A','Ll'],
+    [0x0152,'LATIN CAPITAL LIGATURE OE','Latin Extended-A','Lu'],
+    [0x0153,'LATIN SMALL LIGATURE OE','Latin Extended-A','Ll'],
+    [0x0166,'LATIN CAPITAL LETTER T WITH STROKE','Latin Extended-A','Lu'],
+    [0x0167,'LATIN SMALL LETTER T WITH STROKE','Latin Extended-A','Ll'],
+    // IPA Extensions
+    [0x0250,'LATIN SMALL LETTER TURNED A','IPA Extensions','Ll'],
+    [0x0251,'LATIN SMALL LETTER ALPHA','IPA Extensions','Ll'],
+    [0x0252,'LATIN SMALL LETTER TURNED ALPHA','IPA Extensions','Ll'],
+    [0x0253,'LATIN SMALL LETTER B WITH HOOK','IPA Extensions','Ll'],
+    [0x0254,'LATIN SMALL LETTER OPEN O','IPA Extensions','Ll'],
+    [0x0259,'LATIN SMALL LETTER SCHWA','IPA Extensions','Ll'],
+    [0x025B,'LATIN SMALL LETTER OPEN E','IPA Extensions','Ll'],
+    [0x0261,'LATIN SMALL LETTER SCRIPT G','IPA Extensions','Ll'],
+    [0x0265,'LATIN SMALL LETTER TURNED H','IPA Extensions','Ll'],
+    [0x026A,'LATIN LETTER SMALL CAPITAL I','IPA Extensions','Ll'],
+    [0x026B,'LATIN SMALL LETTER L WITH MIDDLE TILDE','IPA Extensions','Ll'],
+    [0x026C,'LATIN SMALL LETTER L WITH BELT','IPA Extensions','Ll'],
+    [0x026D,'LATIN SMALL LETTER L WITH RETROFLEX HOOK','IPA Extensions','Ll'],
+    [0x026F,'LATIN SMALL LETTER TURNED M','IPA Extensions','Ll'],
+    [0x0272,'LATIN SMALL LETTER N WITH LEFT HOOK','IPA Extensions','Ll'],
+    [0x0273,'LATIN SMALL LETTER N WITH RETROFLEX HOOK','IPA Extensions','Ll'],
+    [0x0275,'LATIN SMALL LETTER BARRED O','IPA Extensions','Ll'],
+    [0x0279,'LATIN SMALL LETTER TURNED R','IPA Extensions','Ll'],
+    [0x027B,'LATIN SMALL LETTER TURNED R WITH HOOK','IPA Extensions','Ll'],
+    [0x027E,'LATIN SMALL LETTER R WITH FISHHOOK','IPA Extensions','Ll'],
+    [0x0283,'LATIN SMALL LETTER ESH','IPA Extensions','Ll'],
+    [0x0289,'LATIN SMALL LETTER U BAR','IPA Extensions','Ll'],
+    [0x028A,'LATIN SMALL LETTER UPSILON','IPA Extensions','Ll'],
+    [0x028B,'LATIN SMALL LETTER V WITH HOOK','IPA Extensions','Ll'],
+    [0x028C,'LATIN SMALL LETTER TURNED V','IPA Extensions','Ll'],
+    [0x0292,'LATIN SMALL LETTER EZH','IPA Extensions','Ll'],
+    // Greek
+    [0x0391,'GREEK CAPITAL LETTER ALPHA','Greek and Coptic','Lu'],
+    [0x0392,'GREEK CAPITAL LETTER BETA','Greek and Coptic','Lu'],
+    [0x0393,'GREEK CAPITAL LETTER GAMMA','Greek and Coptic','Lu'],
+    [0x0394,'GREEK CAPITAL LETTER DELTA','Greek and Coptic','Lu'],
+    [0x0395,'GREEK CAPITAL LETTER EPSILON','Greek and Coptic','Lu'],
+    [0x0396,'GREEK CAPITAL LETTER ZETA','Greek and Coptic','Lu'],
+    [0x0397,'GREEK CAPITAL LETTER ETA','Greek and Coptic','Lu'],
+    [0x0398,'GREEK CAPITAL LETTER THETA','Greek and Coptic','Lu'],
+    [0x0399,'GREEK CAPITAL LETTER IOTA','Greek and Coptic','Lu'],
+    [0x039A,'GREEK CAPITAL LETTER KAPPA','Greek and Coptic','Lu'],
+    [0x039B,'GREEK CAPITAL LETTER LAMDA','Greek and Coptic','Lu'],
+    [0x039C,'GREEK CAPITAL LETTER MU','Greek and Coptic','Lu'],
+    [0x039D,'GREEK CAPITAL LETTER NU','Greek and Coptic','Lu'],
+    [0x039E,'GREEK CAPITAL LETTER XI','Greek and Coptic','Lu'],
+    [0x039F,'GREEK CAPITAL LETTER OMICRON','Greek and Coptic','Lu'],
+    [0x03A0,'GREEK CAPITAL LETTER PI','Greek and Coptic','Lu'],
+    [0x03A1,'GREEK CAPITAL LETTER RHO','Greek and Coptic','Lu'],
+    [0x03A3,'GREEK CAPITAL LETTER SIGMA','Greek and Coptic','Lu'],
+    [0x03A4,'GREEK CAPITAL LETTER TAU','Greek and Coptic','Lu'],
+    [0x03A5,'GREEK CAPITAL LETTER UPSILON','Greek and Coptic','Lu'],
+    [0x03A6,'GREEK CAPITAL LETTER PHI','Greek and Coptic','Lu'],
+    [0x03A7,'GREEK CAPITAL LETTER CHI','Greek and Coptic','Lu'],
+    [0x03A8,'GREEK CAPITAL LETTER PSI','Greek and Coptic','Lu'],
+    [0x03A9,'GREEK CAPITAL LETTER OMEGA','Greek and Coptic','Lu'],
+    [0x03B1,'GREEK SMALL LETTER ALPHA','Greek and Coptic','Ll'],
+    [0x03B2,'GREEK SMALL LETTER BETA','Greek and Coptic','Ll'],
+    [0x03B3,'GREEK SMALL LETTER GAMMA','Greek and Coptic','Ll'],
+    [0x03B4,'GREEK SMALL LETTER DELTA','Greek and Coptic','Ll'],
+    [0x03B5,'GREEK SMALL LETTER EPSILON','Greek and Coptic','Ll'],
+    [0x03B6,'GREEK SMALL LETTER ZETA','Greek and Coptic','Ll'],
+    [0x03B7,'GREEK SMALL LETTER ETA','Greek and Coptic','Ll'],
+    [0x03B8,'GREEK SMALL LETTER THETA','Greek and Coptic','Ll'],
+    [0x03B9,'GREEK SMALL LETTER IOTA','Greek and Coptic','Ll'],
+    [0x03BA,'GREEK SMALL LETTER KAPPA','Greek and Coptic','Ll'],
+    [0x03BB,'GREEK SMALL LETTER LAMDA','Greek and Coptic','Ll'],
+    [0x03BC,'GREEK SMALL LETTER MU','Greek and Coptic','Ll'],
+    [0x03BD,'GREEK SMALL LETTER NU','Greek and Coptic','Ll'],
+    [0x03BE,'GREEK SMALL LETTER XI','Greek and Coptic','Ll'],
+    [0x03BF,'GREEK SMALL LETTER OMICRON','Greek and Coptic','Ll'],
+    [0x03C0,'GREEK SMALL LETTER PI','Greek and Coptic','Ll'],
+    [0x03C1,'GREEK SMALL LETTER RHO','Greek and Coptic','Ll'],
+    [0x03C2,'GREEK SMALL LETTER FINAL SIGMA','Greek and Coptic','Ll'],
+    [0x03C3,'GREEK SMALL LETTER SIGMA','Greek and Coptic','Ll'],
+    [0x03C4,'GREEK SMALL LETTER TAU','Greek and Coptic','Ll'],
+    [0x03C5,'GREEK SMALL LETTER UPSILON','Greek and Coptic','Ll'],
+    [0x03C6,'GREEK SMALL LETTER PHI','Greek and Coptic','Ll'],
+    [0x03C7,'GREEK SMALL LETTER CHI','Greek and Coptic','Ll'],
+    [0x03C8,'GREEK SMALL LETTER PSI','Greek and Coptic','Ll'],
+    [0x03C9,'GREEK SMALL LETTER OMEGA','Greek and Coptic','Ll'],
+    [0x03D5,'GREEK PHI SYMBOL','Greek and Coptic','Ll'],
+    [0x03D6,'GREEK PI SYMBOL','Greek and Coptic','Ll'],
+    [0x03F0,'GREEK KAPPA SYMBOL','Greek and Coptic','Ll'],
+    [0x03F1,'GREEK RHO SYMBOL','Greek and Coptic','Ll'],
+    [0x03F5,'GREEK LUNATE EPSILON SYMBOL','Greek and Coptic','Ll'],
+    // Cyrillic
+    [0x0410,'CYRILLIC CAPITAL LETTER A','Cyrillic','Lu'],
+    [0x0411,'CYRILLIC CAPITAL LETTER BE','Cyrillic','Lu'],
+    [0x0412,'CYRILLIC CAPITAL LETTER VE','Cyrillic','Lu'],
+    [0x0413,'CYRILLIC CAPITAL LETTER GHE','Cyrillic','Lu'],
+    [0x0414,'CYRILLIC CAPITAL LETTER DE','Cyrillic','Lu'],
+    [0x0415,'CYRILLIC CAPITAL LETTER IE','Cyrillic','Lu'],
+    [0x0416,'CYRILLIC CAPITAL LETTER ZHE','Cyrillic','Lu'],
+    [0x0417,'CYRILLIC CAPITAL LETTER ZE','Cyrillic','Lu'],
+    [0x0418,'CYRILLIC CAPITAL LETTER I','Cyrillic','Lu'],
+    [0x041A,'CYRILLIC CAPITAL LETTER KA','Cyrillic','Lu'],
+    [0x041B,'CYRILLIC CAPITAL LETTER EL','Cyrillic','Lu'],
+    [0x041C,'CYRILLIC CAPITAL LETTER EM','Cyrillic','Lu'],
+    [0x041D,'CYRILLIC CAPITAL LETTER EN','Cyrillic','Lu'],
+    [0x041E,'CYRILLIC CAPITAL LETTER O','Cyrillic','Lu'],
+    [0x041F,'CYRILLIC CAPITAL LETTER PE','Cyrillic','Lu'],
+    [0x0420,'CYRILLIC CAPITAL LETTER ER','Cyrillic','Lu'],
+    [0x0421,'CYRILLIC CAPITAL LETTER ES','Cyrillic','Lu'],
+    [0x0422,'CYRILLIC CAPITAL LETTER TE','Cyrillic','Lu'],
+    [0x0423,'CYRILLIC CAPITAL LETTER U','Cyrillic','Lu'],
+    [0x0424,'CYRILLIC CAPITAL LETTER EF','Cyrillic','Lu'],
+    [0x0425,'CYRILLIC CAPITAL LETTER HA','Cyrillic','Lu'],
+    [0x0426,'CYRILLIC CAPITAL LETTER TSE','Cyrillic','Lu'],
+    [0x0427,'CYRILLIC CAPITAL LETTER CHE','Cyrillic','Lu'],
+    [0x0428,'CYRILLIC CAPITAL LETTER SHA','Cyrillic','Lu'],
+    [0x0429,'CYRILLIC CAPITAL LETTER SHCHA','Cyrillic','Lu'],
+    [0x042A,'CYRILLIC CAPITAL LETTER HARD SIGN','Cyrillic','Lu'],
+    [0x042B,'CYRILLIC CAPITAL LETTER YERU','Cyrillic','Lu'],
+    [0x042C,'CYRILLIC CAPITAL LETTER SOFT SIGN','Cyrillic','Lu'],
+    [0x042D,'CYRILLIC CAPITAL LETTER E','Cyrillic','Lu'],
+    [0x042E,'CYRILLIC CAPITAL LETTER YU','Cyrillic','Lu'],
+    [0x042F,'CYRILLIC CAPITAL LETTER YA','Cyrillic','Lu'],
+    [0x0430,'CYRILLIC SMALL LETTER A','Cyrillic','Ll'],
+    [0x0431,'CYRILLIC SMALL LETTER BE','Cyrillic','Ll'],
+    [0x0432,'CYRILLIC SMALL LETTER VE','Cyrillic','Ll'],
+    [0x0433,'CYRILLIC SMALL LETTER GHE','Cyrillic','Ll'],
+    [0x0434,'CYRILLIC SMALL LETTER DE','Cyrillic','Ll'],
+    [0x0435,'CYRILLIC SMALL LETTER IE','Cyrillic','Ll'],
+    [0x0436,'CYRILLIC SMALL LETTER ZHE','Cyrillic','Ll'],
+    [0x0437,'CYRILLIC SMALL LETTER ZE','Cyrillic','Ll'],
+    [0x0438,'CYRILLIC SMALL LETTER I','Cyrillic','Ll'],
+    [0x043A,'CYRILLIC SMALL LETTER KA','Cyrillic','Ll'],
+    [0x043B,'CYRILLIC SMALL LETTER EL','Cyrillic','Ll'],
+    [0x043C,'CYRILLIC SMALL LETTER EM','Cyrillic','Ll'],
+    [0x043D,'CYRILLIC SMALL LETTER EN','Cyrillic','Ll'],
+    [0x043E,'CYRILLIC SMALL LETTER O','Cyrillic','Ll'],
+    [0x043F,'CYRILLIC SMALL LETTER PE','Cyrillic','Ll'],
+    [0x0440,'CYRILLIC SMALL LETTER ER','Cyrillic','Ll'],
+    [0x0441,'CYRILLIC SMALL LETTER ES','Cyrillic','Ll'],
+    [0x0442,'CYRILLIC SMALL LETTER TE','Cyrillic','Ll'],
+    [0x0443,'CYRILLIC SMALL LETTER U','Cyrillic','Ll'],
+    [0x0444,'CYRILLIC SMALL LETTER EF','Cyrillic','Ll'],
+    [0x0445,'CYRILLIC SMALL LETTER HA','Cyrillic','Ll'],
+    [0x0446,'CYRILLIC SMALL LETTER TSE','Cyrillic','Ll'],
+    [0x0447,'CYRILLIC SMALL LETTER CHE','Cyrillic','Ll'],
+    [0x0448,'CYRILLIC SMALL LETTER SHA','Cyrillic','Ll'],
+    [0x0449,'CYRILLIC SMALL LETTER SHCHA','Cyrillic','Ll'],
+    [0x044A,'CYRILLIC SMALL LETTER HARD SIGN','Cyrillic','Ll'],
+    [0x044B,'CYRILLIC SMALL LETTER YERU','Cyrillic','Ll'],
+    [0x044C,'CYRILLIC SMALL LETTER SOFT SIGN','Cyrillic','Ll'],
+    [0x044D,'CYRILLIC SMALL LETTER E','Cyrillic','Ll'],
+    [0x044E,'CYRILLIC SMALL LETTER YU','Cyrillic','Ll'],
+    [0x044F,'CYRILLIC SMALL LETTER YA','Cyrillic','Ll'],
+    // General Punctuation
+    [0x2013,'EN DASH','General Punctuation','Pd'],
+    [0x2014,'EM DASH','General Punctuation','Pd'],
+    [0x2015,'HORIZONTAL BAR','General Punctuation','Pd'],
+    [0x2016,'DOUBLE VERTICAL LINE','General Punctuation','Po'],
+    [0x2017,'DOUBLE LOW LINE','General Punctuation','Po'],
+    [0x2018,'LEFT SINGLE QUOTATION MARK','General Punctuation','Pi'],
+    [0x2019,'RIGHT SINGLE QUOTATION MARK','General Punctuation','Pf'],
+    [0x201A,'SINGLE LOW-9 QUOTATION MARK','General Punctuation','Ps'],
+    [0x201B,'SINGLE HIGH-REVERSED-9 QUOTATION MARK','General Punctuation','Pi'],
+    [0x201C,'LEFT DOUBLE QUOTATION MARK','General Punctuation','Pi'],
+    [0x201D,'RIGHT DOUBLE QUOTATION MARK','General Punctuation','Pf'],
+    [0x201E,'DOUBLE LOW-9 QUOTATION MARK','General Punctuation','Ps'],
+    [0x2020,'DAGGER','General Punctuation','Po'],
+    [0x2021,'DOUBLE DAGGER','General Punctuation','Po'],
+    [0x2022,'BULLET','General Punctuation','Po'],
+    [0x2023,'TRIANGULAR BULLET','General Punctuation','Po'],
+    [0x2024,'ONE DOT LEADER','General Punctuation','Po'],
+    [0x2025,'TWO DOT LEADER','General Punctuation','Po'],
+    [0x2026,'HORIZONTAL ELLIPSIS','General Punctuation','Po'],
+    [0x2030,'PER MILLE SIGN','General Punctuation','Po'],
+    [0x2031,'PER TEN THOUSAND SIGN','General Punctuation','Po'],
+    [0x2032,'PRIME','General Punctuation','Po'],
+    [0x2033,'DOUBLE PRIME','General Punctuation','Po'],
+    [0x2039,'SINGLE LEFT-POINTING ANGLE QUOTATION MARK','General Punctuation','Pi'],
+    [0x203A,'SINGLE RIGHT-POINTING ANGLE QUOTATION MARK','General Punctuation','Pf'],
+    [0x203B,'REFERENCE MARK','General Punctuation','Po'],
+    [0x203C,'DOUBLE EXCLAMATION MARK','General Punctuation','Po'],
+    [0x203D,'INTERROBANG','General Punctuation','Po'],
+    [0x2042,'ASTERISM','General Punctuation','Po'],
+    [0x2044,'FRACTION SLASH','General Punctuation','Sm'],
+    [0x2047,'DOUBLE QUESTION MARK','General Punctuation','Po'],
+    [0x204B,'REVERSED PILCROW SIGN','General Punctuation','Po'],
+    [0x204F,'REVERSED SEMICOLON','General Punctuation','Po'],
+    // Letterlike Symbols
+    [0x2100,'ACCOUNT OF','Letterlike Symbols','So'],
+    [0x2101,'ADDRESSED TO THE SUBJECT','Letterlike Symbols','So'],
+    [0x2102,'DOUBLE-STRUCK CAPITAL C','Letterlike Symbols','Lu'],
+    [0x2103,'DEGREE CELSIUS','Letterlike Symbols','So'],
+    [0x2105,'CARE OF','Letterlike Symbols','So'],
+    [0x2106,'CADA UNA','Letterlike Symbols','So'],
+    [0x2107,'EULER CONSTANT','Letterlike Symbols','Lu'],
+    [0x2109,'DEGREE FAHRENHEIT','Letterlike Symbols','So'],
+    [0x210A,'SCRIPT SMALL G','Letterlike Symbols','Ll'],
+    [0x210B,'SCRIPT CAPITAL H','Letterlike Symbols','Lu'],
+    [0x210C,'BLACK-LETTER CAPITAL H','Letterlike Symbols','Lu'],
+    [0x210D,'DOUBLE-STRUCK CAPITAL H','Letterlike Symbols','Lu'],
+    [0x210E,'PLANCK CONSTANT','Letterlike Symbols','Ll'],
+    [0x210F,'PLANCK CONSTANT OVER TWO PI','Letterlike Symbols','Ll'],
+    [0x2110,'SCRIPT CAPITAL I','Letterlike Symbols','Lu'],
+    [0x2111,'BLACK-LETTER CAPITAL I','Letterlike Symbols','Lu'],
+    [0x2112,'SCRIPT CAPITAL L','Letterlike Symbols','Lu'],
+    [0x2113,'SCRIPT SMALL L','Letterlike Symbols','Ll'],
+    [0x2115,'DOUBLE-STRUCK CAPITAL N','Letterlike Symbols','Lu'],
+    [0x2116,'NUMERO SIGN','Letterlike Symbols','So'],
+    [0x2117,'SOUND RECORDING COPYRIGHT','Letterlike Symbols','So'],
+    [0x2118,'SCRIPT CAPITAL P','Letterlike Symbols','Sm'],
+    [0x2119,'DOUBLE-STRUCK CAPITAL P','Letterlike Symbols','Lu'],
+    [0x211A,'DOUBLE-STRUCK CAPITAL Q','Letterlike Symbols','Lu'],
+    [0x211B,'SCRIPT CAPITAL R','Letterlike Symbols','Lu'],
+    [0x211C,'BLACK-LETTER CAPITAL R','Letterlike Symbols','Lu'],
+    [0x211D,'DOUBLE-STRUCK CAPITAL R','Letterlike Symbols','Lu'],
+    [0x211E,'PRESCRIPTION TAKE','Letterlike Symbols','So'],
+    [0x2122,'TRADE MARK SIGN','Letterlike Symbols','So'],
+    [0x2124,'DOUBLE-STRUCK CAPITAL Z','Letterlike Symbols','Lu'],
+    [0x2126,'OHM SIGN','Letterlike Symbols','Lu'],
+    [0x2127,'INVERTED OHM SIGN','Letterlike Symbols','So'],
+    [0x2128,'BLACK-LETTER CAPITAL Z','Letterlike Symbols','Lu'],
+    [0x212B,'ANGSTROM SIGN','Letterlike Symbols','Lu'],
+    [0x212C,'SCRIPT CAPITAL B','Letterlike Symbols','Lu'],
+    [0x212D,'BLACK-LETTER CAPITAL C','Letterlike Symbols','Lu'],
+    [0x212E,'ESTIMATED SIGN','Letterlike Symbols','So'],
+    [0x212F,'SCRIPT SMALL E','Letterlike Symbols','Ll'],
+    [0x2130,'SCRIPT CAPITAL E','Letterlike Symbols','Lu'],
+    [0x2131,'SCRIPT CAPITAL F','Letterlike Symbols','Lu'],
+    [0x2133,'SCRIPT CAPITAL M','Letterlike Symbols','Lu'],
+    [0x2134,'SCRIPT SMALL O','Letterlike Symbols','Ll'],
+    // Number Forms
+    [0x2153,'VULGAR FRACTION ONE THIRD','Number Forms','No'],
+    [0x2154,'VULGAR FRACTION TWO THIRDS','Number Forms','No'],
+    [0x2155,'VULGAR FRACTION ONE FIFTH','Number Forms','No'],
+    [0x2159,'VULGAR FRACTION ONE SIXTH','Number Forms','No'],
+    [0x215B,'VULGAR FRACTION ONE EIGHTH','Number Forms','No'],
+    [0x215C,'VULGAR FRACTION THREE EIGHTHS','Number Forms','No'],
+    [0x215D,'VULGAR FRACTION FIVE EIGHTHS','Number Forms','No'],
+    [0x215E,'VULGAR FRACTION SEVEN EIGHTHS','Number Forms','No'],
+    [0x215F,'FRACTION NUMERATOR ONE','Number Forms','No'],
+    [0x2160,'ROMAN NUMERAL ONE','Number Forms','Nl'],
+    [0x2161,'ROMAN NUMERAL TWO','Number Forms','Nl'],
+    [0x2162,'ROMAN NUMERAL THREE','Number Forms','Nl'],
+    [0x2163,'ROMAN NUMERAL FOUR','Number Forms','Nl'],
+    [0x2164,'ROMAN NUMERAL FIVE','Number Forms','Nl'],
+    [0x2165,'ROMAN NUMERAL SIX','Number Forms','Nl'],
+    [0x2166,'ROMAN NUMERAL SEVEN','Number Forms','Nl'],
+    [0x2167,'ROMAN NUMERAL EIGHT','Number Forms','Nl'],
+    [0x2168,'ROMAN NUMERAL NINE','Number Forms','Nl'],
+    [0x2169,'ROMAN NUMERAL TEN','Number Forms','Nl'],
+    [0x216A,'ROMAN NUMERAL ELEVEN','Number Forms','Nl'],
+    [0x216B,'ROMAN NUMERAL TWELVE','Number Forms','Nl'],
+    [0x216C,'ROMAN NUMERAL FIFTY','Number Forms','Nl'],
+    [0x216D,'ROMAN NUMERAL ONE HUNDRED','Number Forms','Nl'],
+    [0x216E,'ROMAN NUMERAL FIVE HUNDRED','Number Forms','Nl'],
+    [0x216F,'ROMAN NUMERAL ONE THOUSAND','Number Forms','Nl'],
+    // Arrows
+    [0x2190,'LEFTWARDS ARROW','Arrows','Sm'],
+    [0x2191,'UPWARDS ARROW','Arrows','Sm'],
+    [0x2192,'RIGHTWARDS ARROW','Arrows','Sm'],
+    [0x2193,'DOWNWARDS ARROW','Arrows','Sm'],
+    [0x2194,'LEFT RIGHT ARROW','Arrows','Sm'],
+    [0x2195,'UP DOWN ARROW','Arrows','Sm'],
+    [0x2196,'NORTH WEST ARROW','Arrows','So'],
+    [0x2197,'NORTH EAST ARROW','Arrows','So'],
+    [0x2198,'SOUTH EAST ARROW','Arrows','So'],
+    [0x2199,'SOUTH WEST ARROW','Arrows','So'],
+    [0x219A,'LEFTWARDS ARROW WITH STROKE','Arrows','Sm'],
+    [0x219B,'RIGHTWARDS ARROW WITH STROKE','Arrows','Sm'],
+    [0x219C,'LEFTWARDS WAVE ARROW','Arrows','So'],
+    [0x219D,'RIGHTWARDS WAVE ARROW','Arrows','So'],
+    [0x219E,'LEFTWARDS TWO HEADED ARROW','Arrows','So'],
+    [0x219F,'UPWARDS TWO HEADED ARROW','Arrows','So'],
+    [0x21A0,'RIGHTWARDS TWO HEADED ARROW','Arrows','Sm'],
+    [0x21A1,'DOWNWARDS TWO HEADED ARROW','Arrows','So'],
+    [0x21A2,'LEFTWARDS ARROW WITH TAIL','Arrows','So'],
+    [0x21A3,'RIGHTWARDS ARROW WITH TAIL','Arrows','Sm'],
+    [0x21A6,'RIGHTWARDS ARROW FROM BAR','Arrows','Sm'],
+    [0x21A9,'LEFTWARDS ARROW WITH HOOK','Arrows','So'],
+    [0x21AA,'RIGHTWARDS ARROW WITH HOOK','Arrows','So'],
+    [0x21AE,'LEFT RIGHT ARROW WITH STROKE','Arrows','Sm'],
+    [0x21BC,'LEFTWARDS HARPOON WITH BARB UPWARDS','Arrows','So'],
+    [0x21BD,'LEFTWARDS HARPOON WITH BARB DOWNWARDS','Arrows','So'],
+    [0x21BE,'UPWARDS HARPOON WITH BARB RIGHTWARDS','Arrows','So'],
+    [0x21C0,'RIGHTWARDS HARPOON WITH BARB UPWARDS','Arrows','So'],
+    [0x21C1,'RIGHTWARDS HARPOON WITH BARB DOWNWARDS','Arrows','So'],
+    [0x21C4,'RIGHTWARDS ARROW OVER LEFTWARDS ARROW','Arrows','So'],
+    [0x21C6,'LEFTWARDS ARROW OVER RIGHTWARDS ARROW','Arrows','So'],
+    [0x21C7,'LEFTWARDS PAIRED ARROWS','Arrows','So'],
+    [0x21C8,'UPWARDS PAIRED ARROWS','Arrows','So'],
+    [0x21C9,'RIGHTWARDS PAIRED ARROWS','Arrows','So'],
+    [0x21CA,'DOWNWARDS PAIRED ARROWS','Arrows','So'],
+    [0x21CB,'LEFTWARDS HARPOON OVER RIGHTWARDS HARPOON','Arrows','So'],
+    [0x21CC,'RIGHTWARDS HARPOON OVER LEFTWARDS HARPOON','Arrows','So'],
+    [0x21D0,'LEFTWARDS DOUBLE ARROW','Arrows','So'],
+    [0x21D1,'UPWARDS DOUBLE ARROW','Arrows','So'],
+    [0x21D2,'RIGHTWARDS DOUBLE ARROW','Arrows','Sm'],
+    [0x21D3,'DOWNWARDS DOUBLE ARROW','Arrows','So'],
+    [0x21D4,'LEFT RIGHT DOUBLE ARROW','Arrows','Sm'],
+    [0x21D5,'UP DOWN DOUBLE ARROW','Arrows','So'],
+    [0x21E6,'LEFTWARDS WHITE ARROW','Arrows','So'],
+    [0x21E7,'UPWARDS WHITE ARROW','Arrows','So'],
+    [0x21E8,'RIGHTWARDS WHITE ARROW','Arrows','So'],
+    [0x21E9,'DOWNWARDS WHITE ARROW','Arrows','So'],
+    // Mathematical Operators
+    [0x2200,'FOR ALL','Mathematical Operators','Sm'],
+    [0x2201,'COMPLEMENT','Mathematical Operators','Sm'],
+    [0x2202,'PARTIAL DIFFERENTIAL','Mathematical Operators','Sm'],
+    [0x2203,'THERE EXISTS','Mathematical Operators','Sm'],
+    [0x2204,'THERE DOES NOT EXIST','Mathematical Operators','Sm'],
+    [0x2205,'EMPTY SET','Mathematical Operators','Sm'],
+    [0x2206,'INCREMENT','Mathematical Operators','Sm'],
+    [0x2207,'NABLA','Mathematical Operators','Sm'],
+    [0x2208,'ELEMENT OF','Mathematical Operators','Sm'],
+    [0x2209,'NOT AN ELEMENT OF','Mathematical Operators','Sm'],
+    [0x220A,'SMALL ELEMENT OF','Mathematical Operators','Sm'],
+    [0x220B,'CONTAINS AS MEMBER','Mathematical Operators','Sm'],
+    [0x220F,'N-ARY PRODUCT','Mathematical Operators','Sm'],
+    [0x2210,'N-ARY COPRODUCT','Mathematical Operators','Sm'],
+    [0x2211,'N-ARY SUMMATION','Mathematical Operators','Sm'],
+    [0x2212,'MINUS SIGN','Mathematical Operators','Sm'],
+    [0x2213,'MINUS-OR-PLUS SIGN','Mathematical Operators','Sm'],
+    [0x2214,'DOT PLUS','Mathematical Operators','Sm'],
+    [0x2215,'DIVISION SLASH','Mathematical Operators','Sm'],
+    [0x2216,'SET MINUS','Mathematical Operators','Sm'],
+    [0x2217,'ASTERISK OPERATOR','Mathematical Operators','Sm'],
+    [0x2218,'RING OPERATOR','Mathematical Operators','Sm'],
+    [0x2219,'BULLET OPERATOR','Mathematical Operators','Sm'],
+    [0x221A,'SQUARE ROOT','Mathematical Operators','Sm'],
+    [0x221B,'CUBE ROOT','Mathematical Operators','Sm'],
+    [0x221C,'FOURTH ROOT','Mathematical Operators','Sm'],
+    [0x221D,'PROPORTIONAL TO','Mathematical Operators','Sm'],
+    [0x221E,'INFINITY','Mathematical Operators','Sm'],
+    [0x221F,'RIGHT ANGLE','Mathematical Operators','Sm'],
+    [0x2220,'ANGLE','Mathematical Operators','Sm'],
+    [0x2221,'MEASURED ANGLE','Mathematical Operators','Sm'],
+    [0x2222,'SPHERICAL ANGLE','Mathematical Operators','Sm'],
+    [0x2223,'DIVIDES','Mathematical Operators','Sm'],
+    [0x2224,'DOES NOT DIVIDE','Mathematical Operators','Sm'],
+    [0x2225,'PARALLEL TO','Mathematical Operators','Sm'],
+    [0x2226,'NOT PARALLEL TO','Mathematical Operators','Sm'],
+    [0x2227,'LOGICAL AND','Mathematical Operators','Sm'],
+    [0x2228,'LOGICAL OR','Mathematical Operators','Sm'],
+    [0x2229,'INTERSECTION','Mathematical Operators','Sm'],
+    [0x222A,'UNION','Mathematical Operators','Sm'],
+    [0x222B,'INTEGRAL','Mathematical Operators','Sm'],
+    [0x222C,'DOUBLE INTEGRAL','Mathematical Operators','Sm'],
+    [0x222D,'TRIPLE INTEGRAL','Mathematical Operators','Sm'],
+    [0x222E,'CONTOUR INTEGRAL','Mathematical Operators','Sm'],
+    [0x2234,'THEREFORE','Mathematical Operators','Sm'],
+    [0x2235,'BECAUSE','Mathematical Operators','Sm'],
+    [0x2236,'RATIO','Mathematical Operators','Sm'],
+    [0x2237,'PROPORTION','Mathematical Operators','Sm'],
+    [0x2238,'DOT MINUS','Mathematical Operators','Sm'],
+    [0x223C,'TILDE OPERATOR','Mathematical Operators','Sm'],
+    [0x2248,'ALMOST EQUAL TO','Mathematical Operators','Sm'],
+    [0x2249,'NOT ALMOST EQUAL TO','Mathematical Operators','Sm'],
+    [0x224F,'DIFFERENCE BETWEEN','Mathematical Operators','Sm'],
+    [0x2260,'NOT EQUAL TO','Mathematical Operators','Sm'],
+    [0x2261,'IDENTICAL TO','Mathematical Operators','Sm'],
+    [0x2262,'NOT IDENTICAL TO','Mathematical Operators','Sm'],
+    [0x2264,'LESS-THAN OR EQUAL TO','Mathematical Operators','Sm'],
+    [0x2265,'GREATER-THAN OR EQUAL TO','Mathematical Operators','Sm'],
+    [0x2266,'LESS-THAN OVER EQUAL TO','Mathematical Operators','Sm'],
+    [0x2267,'GREATER-THAN OVER EQUAL TO','Mathematical Operators','Sm'],
+    [0x226A,'MUCH LESS-THAN','Mathematical Operators','Sm'],
+    [0x226B,'MUCH GREATER-THAN','Mathematical Operators','Sm'],
+    [0x2282,'SUBSET OF','Mathematical Operators','Sm'],
+    [0x2283,'SUPERSET OF','Mathematical Operators','Sm'],
+    [0x2284,'NOT A SUBSET OF','Mathematical Operators','Sm'],
+    [0x2285,'NOT A SUPERSET OF','Mathematical Operators','Sm'],
+    [0x2286,'SUBSET OF OR EQUAL TO','Mathematical Operators','Sm'],
+    [0x2287,'SUPERSET OF OR EQUAL TO','Mathematical Operators','Sm'],
+    [0x2295,'CIRCLED PLUS','Mathematical Operators','Sm'],
+    [0x2296,'CIRCLED MINUS','Mathematical Operators','Sm'],
+    [0x2297,'CIRCLED TIMES','Mathematical Operators','Sm'],
+    [0x2299,'CIRCLED DOT OPERATOR','Mathematical Operators','Sm'],
+    [0x22A2,'RIGHT TACK','Mathematical Operators','Sm'],
+    [0x22A3,'LEFT TACK','Mathematical Operators','Sm'],
+    [0x22A4,'DOWN TACK','Mathematical Operators','Sm'],
+    [0x22A5,'UP TACK','Mathematical Operators','Sm'],
+    [0x22A8,'TRUE','Mathematical Operators','Sm'],
+    [0x22A9,'FORCES','Mathematical Operators','Sm'],
+    [0x22C0,'N-ARY LOGICAL AND','Mathematical Operators','Sm'],
+    [0x22C1,'N-ARY LOGICAL OR','Mathematical Operators','Sm'],
+    [0x22C2,'N-ARY INTERSECTION','Mathematical Operators','Sm'],
+    [0x22C3,'N-ARY UNION','Mathematical Operators','Sm'],
+    [0x22C5,'DOT OPERATOR','Mathematical Operators','Sm'],
+    [0x22C6,'STAR OPERATOR','Mathematical Operators','Sm'],
+    [0x22C8,'BOWTIE','Mathematical Operators','Sm'],
+    [0x22EE,'VERTICAL ELLIPSIS','Mathematical Operators','Sm'],
+    [0x22EF,'MIDLINE HORIZONTAL ELLIPSIS','Mathematical Operators','Sm'],
+    [0x22F0,'UP RIGHT DIAGONAL ELLIPSIS','Mathematical Operators','Sm'],
+    [0x22F1,'DOWN RIGHT DIAGONAL ELLIPSIS','Mathematical Operators','Sm'],
+    // Currency Symbols
+    [0x20A0,'EURO-CURRENCY SIGN','Currency Symbols','Sc'],
+    [0x20A1,'COLON SIGN','Currency Symbols','Sc'],
+    [0x20A2,'CRUZEIRO SIGN','Currency Symbols','Sc'],
+    [0x20A3,'FRENCH FRANC SIGN','Currency Symbols','Sc'],
+    [0x20A4,'LIRA SIGN','Currency Symbols','Sc'],
+    [0x20A5,'MILL SIGN','Currency Symbols','Sc'],
+    [0x20A6,'NAIRA SIGN','Currency Symbols','Sc'],
+    [0x20A7,'PESETA SIGN','Currency Symbols','Sc'],
+    [0x20A8,'RUPEE SIGN','Currency Symbols','Sc'],
+    [0x20A9,'WON SIGN','Currency Symbols','Sc'],
+    [0x20AA,'NEW SHEQEL SIGN','Currency Symbols','Sc'],
+    [0x20AB,'DONG SIGN','Currency Symbols','Sc'],
+    [0x20AC,'EURO SIGN','Currency Symbols','Sc'],
+    [0x20AD,'KIP SIGN','Currency Symbols','Sc'],
+    [0x20AE,'TUGRIK SIGN','Currency Symbols','Sc'],
+    [0x20AF,'DRACHMA SIGN','Currency Symbols','Sc'],
+    [0x20B1,'PESO SIGN','Currency Symbols','Sc'],
+    [0x20B2,'GUARANI SIGN','Currency Symbols','Sc'],
+    [0x20B4,'HRYVNIA SIGN','Currency Symbols','Sc'],
+    [0x20B5,'CEDI SIGN','Currency Symbols','Sc'],
+    [0x20B9,'INDIAN RUPEE SIGN','Currency Symbols','Sc'],
+    [0x20BA,'TURKISH LIRA SIGN','Currency Symbols','Sc'],
+    [0x20BF,'BITCOIN SIGN','Currency Symbols','Sc'],
+    // Geometric Shapes
+    [0x25A0,'BLACK SQUARE','Geometric Shapes','So'],
+    [0x25A1,'WHITE SQUARE','Geometric Shapes','So'],
+    [0x25AA,'BLACK SMALL SQUARE','Geometric Shapes','So'],
+    [0x25AB,'WHITE SMALL SQUARE','Geometric Shapes','So'],
+    [0x25B2,'BLACK UP-POINTING TRIANGLE','Geometric Shapes','So'],
+    [0x25B3,'WHITE UP-POINTING TRIANGLE','Geometric Shapes','So'],
+    [0x25B6,'BLACK RIGHT-POINTING TRIANGLE','Geometric Shapes','So'],
+    [0x25B7,'WHITE RIGHT-POINTING TRIANGLE','Geometric Shapes','So'],
+    [0x25BC,'BLACK DOWN-POINTING TRIANGLE','Geometric Shapes','So'],
+    [0x25BD,'WHITE DOWN-POINTING TRIANGLE','Geometric Shapes','So'],
+    [0x25C0,'BLACK LEFT-POINTING TRIANGLE','Geometric Shapes','So'],
+    [0x25C1,'WHITE LEFT-POINTING TRIANGLE','Geometric Shapes','So'],
+    [0x25C6,'BLACK DIAMOND','Geometric Shapes','So'],
+    [0x25C7,'WHITE DIAMOND','Geometric Shapes','So'],
+    [0x25CB,'WHITE CIRCLE','Geometric Shapes','So'],
+    [0x25CF,'BLACK CIRCLE','Geometric Shapes','So'],
+    [0x25D0,'CIRCLE WITH LEFT HALF BLACK','Geometric Shapes','So'],
+    [0x25D1,'CIRCLE WITH RIGHT HALF BLACK','Geometric Shapes','So'],
+    [0x25D2,'CIRCLE WITH LOWER HALF BLACK','Geometric Shapes','So'],
+    [0x25D3,'CIRCLE WITH UPPER HALF BLACK','Geometric Shapes','So'],
+    [0x25E6,'WHITE BULLET','Geometric Shapes','So'],
+    [0x25EF,'LARGE CIRCLE','Geometric Shapes','So'],
+    // Miscellaneous Symbols
+    [0x2600,'BLACK SUN WITH RAYS','Miscellaneous Symbols','So'],
+    [0x2601,'CLOUD','Miscellaneous Symbols','So'],
+    [0x2602,'UMBRELLA','Miscellaneous Symbols','So'],
+    [0x2603,'SNOWMAN','Miscellaneous Symbols','So'],
+    [0x2604,'COMET','Miscellaneous Symbols','So'],
+    [0x2605,'BLACK STAR','Miscellaneous Symbols','So'],
+    [0x2606,'WHITE STAR','Miscellaneous Symbols','So'],
+    [0x2607,'LIGHTNING','Miscellaneous Symbols','So'],
+    [0x2608,'THUNDERSTORM','Miscellaneous Symbols','So'],
+    [0x2609,'SUN','Miscellaneous Symbols','So'],
+    [0x260A,'ASCENDING NODE','Miscellaneous Symbols','So'],
+    [0x260B,'DESCENDING NODE','Miscellaneous Symbols','So'],
+    [0x260C,'CONJUNCTION','Miscellaneous Symbols','So'],
+    [0x260D,'OPPOSITION','Miscellaneous Symbols','So'],
+    [0x260E,'BLACK TELEPHONE','Miscellaneous Symbols','So'],
+    [0x260F,'WHITE TELEPHONE','Miscellaneous Symbols','So'],
+    [0x2610,'BALLOT BOX','Miscellaneous Symbols','So'],
+    [0x2611,'BALLOT BOX WITH CHECK','Miscellaneous Symbols','So'],
+    [0x2612,'BALLOT BOX WITH X','Miscellaneous Symbols','So'],
+    [0x2614,'UMBRELLA WITH RAIN DROPS','Miscellaneous Symbols','So'],
+    [0x2615,'HOT BEVERAGE','Miscellaneous Symbols','So'],
+    [0x2618,'SHAMROCK','Miscellaneous Symbols','So'],
+    [0x261B,'BLACK RIGHT POINTING INDEX','Miscellaneous Symbols','So'],
+    [0x261C,'WHITE LEFT POINTING INDEX','Miscellaneous Symbols','So'],
+    [0x261D,'WHITE UP POINTING INDEX','Miscellaneous Symbols','So'],
+    [0x261E,'WHITE RIGHT POINTING INDEX','Miscellaneous Symbols','So'],
+    [0x2620,'SKULL AND CROSSBONES','Miscellaneous Symbols','So'],
+    [0x2621,'CAUTION SIGN','Miscellaneous Symbols','So'],
+    [0x2622,'RADIOACTIVE SIGN','Miscellaneous Symbols','So'],
+    [0x2623,'BIOHAZARD SIGN','Miscellaneous Symbols','So'],
+    [0x2626,'ORTHODOX CROSS','Miscellaneous Symbols','So'],
+    [0x262F,'YIN YANG','Miscellaneous Symbols','So'],
+    [0x2639,'WHITE FROWNING FACE','Miscellaneous Symbols','So'],
+    [0x263A,'WHITE SMILING FACE','Miscellaneous Symbols','So'],
+    [0x263B,'BLACK SMILING FACE','Miscellaneous Symbols','So'],
+    [0x2660,'BLACK SPADE SUIT','Miscellaneous Symbols','So'],
+    [0x2661,'WHITE HEART SUIT','Miscellaneous Symbols','So'],
+    [0x2662,'WHITE DIAMOND SUIT','Miscellaneous Symbols','So'],
+    [0x2663,'BLACK CLUB SUIT','Miscellaneous Symbols','So'],
+    [0x2664,'WHITE SPADE SUIT','Miscellaneous Symbols','So'],
+    [0x2665,'BLACK HEART SUIT','Miscellaneous Symbols','So'],
+    [0x2666,'BLACK DIAMOND SUIT','Miscellaneous Symbols','So'],
+    [0x2667,'WHITE CLUB SUIT','Miscellaneous Symbols','So'],
+    [0x2668,'HOT SPRINGS','Miscellaneous Symbols','So'],
+    [0x2669,'QUARTER NOTE','Miscellaneous Symbols','So'],
+    [0x266A,'EIGHTH NOTE','Miscellaneous Symbols','So'],
+    [0x266B,'BEAMED EIGHTH NOTES','Miscellaneous Symbols','So'],
+    [0x266C,'BEAMED SIXTEENTH NOTES','Miscellaneous Symbols','So'],
+    [0x266D,'MUSIC FLAT SIGN','Miscellaneous Symbols','So'],
+    [0x266E,'MUSIC NATURAL SIGN','Miscellaneous Symbols','So'],
+    [0x266F,'MUSIC SHARP SIGN','Miscellaneous Symbols','Sm'],
+    [0x2702,'BLACK SCISSORS','Dingbats','So'],
+    [0x2704,'WHITE SCISSORS','Dingbats','So'],
+    [0x2706,'TELEPHONE LOCATION SIGN','Dingbats','So'],
+    [0x2708,'AIRPLANE','Dingbats','So'],
+    [0x2709,'ENVELOPE','Dingbats','So'],
+    [0x270A,'RAISED FIST','Dingbats','So'],
+    [0x270B,'RAISED HAND','Dingbats','So'],
+    [0x270C,'VICTORY HAND','Dingbats','So'],
+    [0x270D,'WRITING HAND','Dingbats','So'],
+    [0x270E,'LOWER RIGHT PENCIL','Dingbats','So'],
+    [0x270F,'PENCIL','Dingbats','So'],
+    [0x2710,'UPPER RIGHT PENCIL','Dingbats','So'],
+    [0x2712,'BLACK NIB','Dingbats','So'],
+    [0x2713,'CHECK MARK','Dingbats','So'],
+    [0x2714,'HEAVY CHECK MARK','Dingbats','So'],
+    [0x2715,'MULTIPLICATION X','Dingbats','So'],
+    [0x2716,'HEAVY MULTIPLICATION X','Dingbats','So'],
+    [0x2717,'BALLOT X','Dingbats','So'],
+    [0x2718,'HEAVY BALLOT X','Dingbats','So'],
+    [0x2719,'OUTLINED GREEK CROSS','Dingbats','So'],
+    [0x271A,'HEAVY GREEK CROSS','Dingbats','So'],
+    [0x2726,'BLACK FOUR POINTED STAR','Dingbats','So'],
+    [0x2727,'WHITE FOUR POINTED STAR','Dingbats','So'],
+    [0x2728,'SPARKLES','Dingbats','So'],
+    [0x272A,'CIRCLED WHITE STAR','Dingbats','So'],
+    [0x272B,'OPEN CENTRE BLACK STAR','Dingbats','So'],
+    [0x2733,'EIGHT SPOKED ASTERISK','Dingbats','So'],
+    [0x2734,'EIGHT POINTED BLACK STAR','Dingbats','So'],
+    [0x2736,'SIX POINTED BLACK STAR','Dingbats','So'],
+    [0x2739,'TWELVE POINTED BLACK STAR','Dingbats','So'],
+    [0x273F,'BLACK FLORETTE','Dingbats','So'],
+    [0x2740,'WHITE FLORETTE','Dingbats','So'],
+    [0x2744,'SNOWFLAKE','Dingbats','So'],
+    [0x2748,'HEAVY SPARKLE','Dingbats','So'],
+    [0x274E,'CROSS MARK','Dingbats','So'],
+    [0x2764,'HEAVY BLACK HEART','Dingbats','So'],
+    [0x2765,'ROTATED HEAVY BLACK HEART BULLET','Dingbats','So'],
+    [0x2794,'HEAVY WIDE-HEADED RIGHTWARDS ARROW','Dingbats','So'],
+    [0x279C,'HEAVY ROUND-TIPPED RIGHTWARDS ARROW','Dingbats','So'],
+    // Box Drawing
+    [0x2500,'BOX DRAWINGS LIGHT HORIZONTAL','Box Drawing','So'],
+    [0x2501,'BOX DRAWINGS HEAVY HORIZONTAL','Box Drawing','So'],
+    [0x2502,'BOX DRAWINGS LIGHT VERTICAL','Box Drawing','So'],
+    [0x2503,'BOX DRAWINGS HEAVY VERTICAL','Box Drawing','So'],
+    [0x250C,'BOX DRAWINGS LIGHT DOWN AND RIGHT','Box Drawing','So'],
+    [0x250F,'BOX DRAWINGS HEAVY DOWN AND RIGHT','Box Drawing','So'],
+    [0x2510,'BOX DRAWINGS LIGHT DOWN AND LEFT','Box Drawing','So'],
+    [0x2513,'BOX DRAWINGS HEAVY DOWN AND LEFT','Box Drawing','So'],
+    [0x2514,'BOX DRAWINGS LIGHT UP AND RIGHT','Box Drawing','So'],
+    [0x2517,'BOX DRAWINGS HEAVY UP AND RIGHT','Box Drawing','So'],
+    [0x2518,'BOX DRAWINGS LIGHT UP AND LEFT','Box Drawing','So'],
+    [0x251B,'BOX DRAWINGS HEAVY UP AND LEFT','Box Drawing','So'],
+    [0x251C,'BOX DRAWINGS LIGHT VERTICAL AND RIGHT','Box Drawing','So'],
+    [0x2523,'BOX DRAWINGS HEAVY VERTICAL AND RIGHT','Box Drawing','So'],
+    [0x2524,'BOX DRAWINGS LIGHT VERTICAL AND LEFT','Box Drawing','So'],
+    [0x252B,'BOX DRAWINGS HEAVY VERTICAL AND LEFT','Box Drawing','So'],
+    [0x252C,'BOX DRAWINGS LIGHT DOWN AND HORIZONTAL','Box Drawing','So'],
+    [0x2533,'BOX DRAWINGS HEAVY DOWN AND HORIZONTAL','Box Drawing','So'],
+    [0x2534,'BOX DRAWINGS LIGHT UP AND HORIZONTAL','Box Drawing','So'],
+    [0x253B,'BOX DRAWINGS HEAVY UP AND HORIZONTAL','Box Drawing','So'],
+    [0x253C,'BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL','Box Drawing','So'],
+    [0x254B,'BOX DRAWINGS HEAVY VERTICAL AND HORIZONTAL','Box Drawing','So'],
+    [0x2550,'BOX DRAWINGS DOUBLE HORIZONTAL','Box Drawing','So'],
+    [0x2551,'BOX DRAWINGS DOUBLE VERTICAL','Box Drawing','So'],
+    [0x2554,'BOX DRAWINGS DOUBLE DOWN AND RIGHT','Box Drawing','So'],
+    [0x2557,'BOX DRAWINGS DOUBLE DOWN AND LEFT','Box Drawing','So'],
+    [0x255A,'BOX DRAWINGS DOUBLE UP AND RIGHT','Box Drawing','So'],
+    [0x255D,'BOX DRAWINGS DOUBLE UP AND LEFT','Box Drawing','So'],
+    [0x2560,'BOX DRAWINGS DOUBLE VERTICAL AND RIGHT','Box Drawing','So'],
+    [0x2563,'BOX DRAWINGS DOUBLE VERTICAL AND LEFT','Box Drawing','So'],
+    [0x2566,'BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL','Box Drawing','So'],
+    [0x2569,'BOX DRAWINGS DOUBLE UP AND HORIZONTAL','Box Drawing','So'],
+    [0x256C,'BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL','Box Drawing','So'],
+    // Block Elements
+    [0x2580,'UPPER HALF BLOCK','Block Elements','So'],
+    [0x2581,'LOWER ONE EIGHTH BLOCK','Block Elements','So'],
+    [0x2582,'LOWER ONE QUARTER BLOCK','Block Elements','So'],
+    [0x2583,'LOWER THREE EIGHTHS BLOCK','Block Elements','So'],
+    [0x2584,'LOWER HALF BLOCK','Block Elements','So'],
+    [0x2585,'LOWER FIVE EIGHTHS BLOCK','Block Elements','So'],
+    [0x2586,'LOWER THREE QUARTERS BLOCK','Block Elements','So'],
+    [0x2587,'LOWER SEVEN EIGHTHS BLOCK','Block Elements','So'],
+    [0x2588,'FULL BLOCK','Block Elements','So'],
+    [0x2589,'LEFT SEVEN EIGHTHS BLOCK','Block Elements','So'],
+    [0x258A,'LEFT THREE QUARTERS BLOCK','Block Elements','So'],
+    [0x258B,'LEFT FIVE EIGHTHS BLOCK','Block Elements','So'],
+    [0x258C,'LEFT HALF BLOCK','Block Elements','So'],
+    [0x258D,'LEFT THREE EIGHTHS BLOCK','Block Elements','So'],
+    [0x258E,'LEFT ONE QUARTER BLOCK','Block Elements','So'],
+    [0x258F,'LEFT ONE EIGHTH BLOCK','Block Elements','So'],
+    [0x2590,'RIGHT HALF BLOCK','Block Elements','So'],
+    [0x2591,'LIGHT SHADE','Block Elements','So'],
+    [0x2592,'MEDIUM SHADE','Block Elements','So'],
+    [0x2593,'DARK SHADE','Block Elements','So'],
+    [0x2594,'UPPER ONE EIGHTH BLOCK','Block Elements','So'],
+    [0x2595,'RIGHT ONE EIGHTH BLOCK','Block Elements','So'],
+  ];
+
+  (function () {
+    var q = document.getElementById('q');
+    var results = document.getElementById('results');
+
+    function cpStr(cp) {
+      return 'U+' + cp.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    function glyph(cp) {
+      try { return String.fromCodePoint(cp); } catch (e) { return '?'; }
+    }
+
+    function render(matches) {
+      if (!matches.length) {
+        results.innerHTML = '<div class="empty">no matches</div>';
+        return;
+      }
+      var html = '';
+      var shown = matches.slice(0, 40);
+      shown.forEach(function (row) {
+        var cp = row[0], name = row[1], block = row[2], cat = row[3];
+        var g = glyph(cp);
+        html += '<div class="result-item">';
+        html += '<div class="glyph">' + g + '</div>';
+        html += '<div>';
+        html += '<div class="cp">' + cpStr(cp) + '</div>';
+        html += '<div class="name">' + name + '</div>';
+        html += '<div class="meta">' + block + ' &middot; ' + cat + '</div>';
+        html += '</div>';
+        html += '</div>';
+      });
+      if (matches.length > 40) {
+        html += '<div class="empty">' + (matches.length - 40) + ' more — refine query</div>';
+      }
+      results.innerHTML = html;
+    }
+
+    function search(val) {
+      if (!val.trim()) { results.innerHTML = ''; return; }
+      // If single character, look it up by codepoint
+      var cps = Array.from(val);
+      if (cps.length === 1) {
+        var cp = val.codePointAt(0);
+        // check dataset first
+        var found = DATA.filter(function (r) { return r[0] === cp; });
+        if (found.length) { render(found); return; }
+        // fallback: show basic info even if not in dataset
+        results.innerHTML = '<div class="result-item"><div class="glyph">' + val + '</div><div><div class="cp">' + cpStr(cp) + '</div><div class="name">(not in curated dataset)</div><div class="meta">codepoint ' + cp + '</div></div></div>';
+        return;
+      }
+      // Name/keyword search
+      var term = val.trim().toUpperCase();
+      var matches = DATA.filter(function (r) {
+        return r[1].indexOf(term) !== -1 || r[2].toUpperCase().indexOf(term) !== -1;
+      });
+      render(matches);
+    }
+
+    q.addEventListener('input', function () { search(q.value); });
+  })();
+</script>
+</body>
+</html>

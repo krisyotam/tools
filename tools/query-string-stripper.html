@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>query string stripper — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } }
+
+  /* tool */
+  textarea { width:100%; min-height:80px; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:12px 14px; font-family:var(--mono); font-size:13px; line-height:1.6; color:hsl(var(--fg)); outline:none; resize:vertical; transition:border-color 150ms ease; word-break:break-all; }
+  textarea:focus { border-color:hsl(var(--fg-dim)); }
+  textarea::placeholder { color:hsl(var(--muted-fg)); }
+  .toggle-row { display:flex; align-items:center; gap:10px; margin:12px 0 16px; }
+  .switch-lbl { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); cursor:pointer; user-select:none; }
+  input[type="checkbox"] { width:16px; height:16px; cursor:pointer; accent-color:hsl(var(--fg)); }
+  .lbl { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin:16px 0 6px; display:block; }
+  .output-url { font-family:var(--mono); font-size:13px; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:12px 14px; color:hsl(var(--fg)); word-break:break-all; min-height:44px; }
+  .copy-btn { margin-top:8px; appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:6px 12px; font-family:var(--mono); font-size:11px; border-radius:3px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .copy-btn:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  .removed { margin-top:16px; }
+  .removed-list { display:flex; flex-direction:column; gap:0; border:1px solid hsl(var(--border)); border-radius:4px; overflow:hidden; }
+  .removed-item { display:flex; align-items:baseline; gap:10px; padding:8px 14px; border-bottom:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:12px; }
+  .removed-item:last-child { border-bottom:none; }
+  .removed-key { color:hsl(var(--fg)); }
+  .removed-val { color:hsl(var(--muted-fg)); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:300px; }
+  .nothing { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); padding:10px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+ <div class="grow">
+ <main class="shell">
+  <div class="nav">
+    <a class="back" href="/tools/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+    <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+  </div>
+  <div class="head">
+    <h1>query string stripper</h1>
+    <p>remove tracking params from urls</p>
+  </div>
+
+  <textarea id="urlInput" placeholder="https://example.com/page?utm_source=email&utm_medium=cta&ref=newsletter" spellcheck="false" autofocus></textarea>
+
+  <div class="toggle-row">
+    <input type="checkbox" id="radicalMode">
+    <label class="switch-lbl" for="radicalMode">strip all query params (radical mode)</label>
+  </div>
+
+  <span class="lbl">clean url</span>
+  <div class="output-url" id="outputUrl"></div>
+  <button class="copy-btn" id="copyBtn">copy</button>
+
+  <div class="removed">
+    <span class="lbl">removed params</span>
+    <div id="removedList"></div>
+  </div>
+ </main>
+ </div>
+
+ <footer>
+  <div class="foot-inner">
+    <span>query string stripper</span>
+    <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+  </div>
+ </footer>
+</div>
+
+<script>
+(function(){
+  var btn=document.querySelector('[data-theme-toggle]');
+  function pl(){var d=document.documentElement.classList.contains('dark');btn.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}
+  pl();btn.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}pl();});
+})();
+
+(function(){
+  var urlInput=document.getElementById('urlInput');
+  var outputUrl=document.getElementById('outputUrl');
+  var removedList=document.getElementById('removedList');
+  var copyBtn=document.getElementById('copyBtn');
+  var radicalMode=document.getElementById('radicalMode');
+
+  var TRACKING_PATTERNS=[
+    /^utm_/i,/^fbclid$/i,/^gclid$/i,/^mc_/i,/^_ga$/i,/^ref$/i,/^ref_src$/i,
+    /^source$/i,/^igshid$/i,/^msclkid$/i,/^dclid$/i,/^yclid$/i,/^oly_/i,
+    /^hsa_/i,/^mkt_tok$/i
+  ];
+
+  function isTracking(key){
+    return TRACKING_PATTERNS.some(function(p){return p.test(key);});
+  }
+
+  function process(){
+    var raw=urlInput.value.trim();
+    if(!raw){outputUrl.textContent='';removedList.innerHTML='';return;}
+    var url;
+    try{url=new URL(raw);}catch(e){
+      outputUrl.textContent=raw;removedList.innerHTML='<p class="nothing">could not parse url</p>';return;
+    }
+    var kept=[];
+    var removed=[];
+    url.searchParams.forEach(function(val,key){
+      if(radicalMode.checked||isTracking(key)) removed.push({key:key,val:val});
+      else kept.push([key,val]);
+    });
+    var clean=url.origin+url.pathname;
+    if(kept.length){
+      clean+='?'+kept.map(function(p){return encodeURIComponent(p[0])+'='+encodeURIComponent(p[1]);}).join('&');
+    }
+    if(url.hash) clean+=url.hash;
+    outputUrl.textContent=clean;
+
+    if(removed.length){
+      var html='<div class="removed-list">';
+      removed.forEach(function(p){
+        html+='<div class="removed-item"><span class="removed-key">'+escHtml(p.key)+'</span><span class="removed-val">='+escHtml(p.val)+'</span></div>';
+      });
+      html+='</div>';
+      removedList.innerHTML=html;
+    } else {
+      removedList.innerHTML='<p class="nothing">no tracking params found</p>';
+    }
+  }
+
+  function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  urlInput.addEventListener('input',process);
+  radicalMode.addEventListener('change',process);
+  copyBtn.addEventListener('click',function(){
+    var v=outputUrl.textContent;
+    if(!v) return;
+    navigator.clipboard.writeText(v).then(function(){
+      var o=copyBtn.textContent;copyBtn.textContent='copied';setTimeout(function(){copyBtn.textContent=o;},900);
+    });
+  });
+})();
+</script>
+</body>
+</html>

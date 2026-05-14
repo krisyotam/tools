@@ -9,9 +9,9 @@ Read this entire file before adding or modifying anything.
 ## What this repo is
 
 - A static site. No build step. No framework. No package.json. No dependencies.
-- Each tool is a single self-contained HTML file at the repository root: `<slug>.html`.
+- Each tool is a single self-contained HTML file in `tools/<slug>.html`.
 - `index.html` is the homepage — a searchable 3-column table (name / category / description) listing every tool.
-- The mounted URL is `krisyotam.com/tools/<slug>` (nginx `try_files` strips the `.html`).
+- The mounted URL is `krisyotam.com/tools/<slug>` (nginx rewrites the slug to `tools/<slug>.html` and serves with no `.html` in the URL).
 - Design language is shared across every page via inlined theme tokens. Never load `style.css` or any external stylesheet other than Google Fonts.
 
 ## What this repo is NOT
@@ -52,12 +52,12 @@ Field rules:
 
 | field         | rule                                                                 |
 |---------------|----------------------------------------------------------------------|
-| `slug`        | lowercase kebab-case, matches the `.html` filename without extension |
+| `slug`        | lowercase kebab-case, matches `tools/<slug>.html` filename without extension |
 | `name`        | display name, lowercase by convention, may contain unicode (`↔`)     |
 | `category`    | must be one of the `categories` array entries                        |
 | `description` | one short phrase, no period, lowercase                               |
 | `keywords`    | array of alternate names, alt-spellings, synonyms — drive search     |
-| `built`       | `true` if `<slug>.html` exists and works; `false` if just a wishlist  |
+| `built`       | `true` if `tools/<slug>.html` exists and works; `false` if just a wishlist  |
 | `added`       | ISO date the entry was first added                                   |
 
 The homepage search box matches against `name + category + description + keywords` — put any alt-spelling or alias the user might type into `keywords`.
@@ -81,7 +81,7 @@ When asked to "add a tool that does X" or similar:
 1. **Read `tools.json`** and check for an existing match (see Lookup above).
 2. **Pick a slug.** Lowercase, kebab-case, short. Examples: `base64`, `regex-tester`, `json-yaml`, `qr`.
 3. **Pick a category** from the predefined list (see below).
-4. **Write `<slug>.html`** by copying the page template (see below) and filling in:
+4. **Write `tools/<slug>.html`** by copying the page template (see below) and filling in:
    - `<title>` — `<tool name> — tools`
    - The `<h1>` and tagline
    - The tool's HTML + CSS + JS
@@ -192,7 +192,7 @@ Every tool page must follow this exact shell. Copy verbatim, replacing the `{{TO
   <div class="grow">
   <main class="shell">
     <div class="nav">
-      <a class="back" href="./">
+      <a class="back" href="/tools/">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         tools
       </a>

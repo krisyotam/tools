@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mime types — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+
+  .modes { display:flex; gap:0; border:1px solid hsl(var(--border)); border-radius:4px; padding:2px; width:fit-content; margin-bottom:20px; }
+  .mode-btn { appearance:none; background:transparent; border:none; padding:6px 14px; font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); cursor:pointer; border-radius:3px; transition:background 120ms ease, color 120ms ease; }
+  .mode-btn[aria-pressed="true"] { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+
+  label.lbl { display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin:0 0 6px; }
+  .inp-wrap { position:relative; margin-bottom:20px; }
+  input[type="text"] { width:100%; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:10px 14px; font-family:var(--mono); font-size:14px; color:hsl(var(--fg)); outline:none; transition:border-color 150ms ease; }
+  input[type="text"]:focus { border-color:hsl(var(--fg-dim)); }
+  input[type="text"]::placeholder { color:hsl(var(--muted-fg)); }
+
+  .result-card { background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:16px 18px; }
+  .result-card.empty { display:none; }
+  .result-row { display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
+  .result-row:last-child { margin-bottom:0; }
+  .result-label { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); }
+  .result-value { font-family:var(--mono); font-size:14px; color:hsl(var(--fg)); }
+  .result-value.dim { color:hsl(var(--fg-dim)); }
+  .exts { display:flex; flex-wrap:wrap; gap:6px; }
+  .ext-tag { font-family:var(--mono); font-size:12px; color:hsl(var(--fg-dim)); background:hsl(var(--bg)); border:1px solid hsl(var(--border)); border-radius:3px; padding:2px 7px; }
+  .no-result { font-family:var(--mono); font-size:13px; color:hsl(var(--muted-fg)); margin-top:8px; }
+
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="/tools/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>mime types</h1>
+      <p>extension ↔ mime type lookup</p>
+    </div>
+
+    <div class="modes" role="group" aria-label="Lookup direction">
+      <button class="mode-btn" data-mode="ext" aria-pressed="true">extension → type</button>
+      <button class="mode-btn" data-mode="type" aria-pressed="false">type → extensions</button>
+    </div>
+
+    <label class="lbl" for="query" id="query-label">file extension</label>
+    <div class="inp-wrap">
+      <input type="text" id="query" placeholder=".pdf or pdf" autocomplete="off" spellcheck="false" autofocus>
+    </div>
+
+    <div class="result-card empty" id="result"></div>
+    <div class="no-result" id="no-result" style="display:none">no match found</div>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>mime types</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  (function(){
+    // [ext, mime, description]
+    var DB = [
+      ['aac','audio/aac','AAC audio'],
+      ['abw','application/x-abiword','AbiWord document'],
+      ['apng','image/apng','Animated Portable Network Graphic'],
+      ['arc','application/x-freearc','Archive document'],
+      ['avif','image/avif','AVIF image'],
+      ['avi','video/x-msvideo','AVI video'],
+      ['azw','application/vnd.amazon.ebook','Amazon Kindle eBook'],
+      ['bin','application/octet-stream','Binary data'],
+      ['bmp','image/bmp','Windows bitmap'],
+      ['bz','application/x-bzip','BZip archive'],
+      ['bz2','application/x-bzip2','BZip2 archive'],
+      ['cda','application/x-cdf','CD audio'],
+      ['csh','application/x-csh','C-Shell script'],
+      ['css','text/css','Cascading Style Sheets'],
+      ['csv','text/csv','Comma-separated values'],
+      ['doc','application/msword','Microsoft Word'],
+      ['docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','Microsoft Word (OpenXML)'],
+      ['eot','application/vnd.ms-fontobject','Embedded OpenType font'],
+      ['epub','application/epub+zip','Electronic publication'],
+      ['gz','application/gzip','GZip compressed archive'],
+      ['gif','image/gif','GIF image'],
+      ['htm','text/html','HyperText Markup Language'],
+      ['html','text/html','HyperText Markup Language'],
+      ['ico','image/vnd.microsoft.icon','Icon format'],
+      ['ics','text/calendar','iCalendar'],
+      ['jar','application/java-archive','Java Archive'],
+      ['jpeg','image/jpeg','JPEG image'],
+      ['jpg','image/jpeg','JPEG image'],
+      ['js','text/javascript','JavaScript'],
+      ['json','application/json','JSON data'],
+      ['jsonld','application/ld+json','JSON-LD data'],
+      ['mid','audio/midi','MIDI audio'],
+      ['midi','audio/midi','MIDI audio'],
+      ['mjs','text/javascript','JavaScript module'],
+      ['mp3','audio/mpeg','MP3 audio'],
+      ['mp4','video/mp4','MP4 video'],
+      ['mpeg','video/mpeg','MPEG video'],
+      ['mpkg','application/vnd.apple.installer+xml','Apple installer'],
+      ['odp','application/vnd.oasis.opendocument.presentation','OpenDocument presentation'],
+      ['ods','application/vnd.oasis.opendocument.spreadsheet','OpenDocument spreadsheet'],
+      ['odt','application/vnd.oasis.opendocument.text','OpenDocument text'],
+      ['oga','audio/ogg','OGG audio'],
+      ['ogv','video/ogg','OGG video'],
+      ['ogx','application/ogg','OGG data'],
+      ['opus','audio/opus','Opus audio'],
+      ['otf','font/otf','OpenType font'],
+      ['png','image/png','Portable Network Graphic'],
+      ['pdf','application/pdf','Adobe PDF'],
+      ['php','application/x-httpd-php','PHP source'],
+      ['ppt','application/vnd.ms-powerpoint','Microsoft PowerPoint'],
+      ['pptx','application/vnd.openxmlformats-officedocument.presentationml.presentation','Microsoft PowerPoint (OpenXML)'],
+      ['rar','application/vnd.rar','RAR archive'],
+      ['rtf','application/rtf','Rich Text Format'],
+      ['sh','application/x-sh','Shell script'],
+      ['svg','image/svg+xml','Scalable Vector Graphic'],
+      ['tar','application/x-tar','Tape archive'],
+      ['tif','image/tiff','Tagged Image File Format'],
+      ['tiff','image/tiff','Tagged Image File Format'],
+      ['ts','video/mp2t','MPEG transport stream'],
+      ['ttf','font/ttf','TrueType font'],
+      ['txt','text/plain','Plain text'],
+      ['vsd','application/vnd.visio','Microsoft Visio'],
+      ['wav','audio/wav','Waveform audio'],
+      ['weba','audio/webm','WEBM audio'],
+      ['webm','video/webm','WEBM video'],
+      ['webp','image/webp','WEBP image'],
+      ['woff','font/woff','Web Open Font Format'],
+      ['woff2','font/woff2','Web Open Font Format 2'],
+      ['xhtml','application/xhtml+xml','XHTML'],
+      ['xls','application/vnd.ms-excel','Microsoft Excel'],
+      ['xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','Microsoft Excel (OpenXML)'],
+      ['xml','application/xml','XML'],
+      ['xul','application/vnd.mozilla.xul+xml','XUL'],
+      ['zip','application/zip','ZIP archive'],
+      ['3gp','video/3gpp','3GPP video'],
+      ['3g2','video/3gpp2','3GPP2 video'],
+      ['7z','application/x-7z-compressed','7-Zip archive'],
+      ['apk','application/vnd.android.package-archive','Android package'],
+      ['dmg','application/x-apple-diskimage','Apple disk image'],
+      ['exe','application/vnd.microsoft.portable-executable','Windows executable'],
+      ['flac','audio/flac','Free Lossless Audio Codec'],
+      ['heic','image/heic','High Efficiency Image'],
+      ['heif','image/heif','High Efficiency Image'],
+      ['m4a','audio/mp4','MPEG-4 audio'],
+      ['m4v','video/mp4','MPEG-4 video'],
+      ['mov','video/quicktime','QuickTime movie'],
+      ['mkv','video/x-matroska','Matroska video'],
+      ['md','text/markdown','Markdown'],
+      ['markdown','text/markdown','Markdown'],
+      ['py','text/x-python','Python script'],
+      ['rb','text/x-ruby','Ruby script'],
+      ['rs','text/x-rust','Rust source'],
+      ['go','text/x-go','Go source'],
+      ['java','text/x-java-source','Java source'],
+      ['c','text/x-c','C source'],
+      ['cpp','text/x-c++src','C++ source'],
+      ['h','text/x-chdr','C header'],
+      ['hpp','text/x-c++hdr','C++ header'],
+      ['sql','application/sql','SQL script'],
+      ['yaml','application/yaml','YAML data'],
+      ['yml','application/yaml','YAML data'],
+      ['toml','application/toml','TOML data'],
+      ['ini','text/plain','Configuration file'],
+      ['conf','text/plain','Configuration file'],
+      ['log','text/plain','Log file'],
+      ['patch','text/x-patch','Patch file'],
+      ['diff','text/x-diff','Diff file'],
+      ['wasm','application/wasm','WebAssembly'],
+      ['map','application/json','Source map'],
+      ['lock','text/plain','Lock file'],
+      ['env','text/plain','Environment file'],
+      ['psd','image/vnd.adobe.photoshop','Adobe Photoshop'],
+      ['ai','application/postscript','Adobe Illustrator'],
+      ['eps','application/postscript','Encapsulated PostScript'],
+      ['ps','application/postscript','PostScript'],
+      ['swf','application/x-shockwave-flash','Adobe Flash'],
+      ['mp2','audio/mpeg','MPEG audio'],
+      ['m3u','audio/x-mpegurl','M3U playlist'],
+      ['m3u8','application/vnd.apple.mpegurl','HLS playlist'],
+      ['flv','video/x-flv','Flash video'],
+      ['wmv','video/x-ms-wmv','Windows Media Video'],
+      ['wma','audio/x-ms-wma','Windows Media Audio'],
+      ['aiff','audio/aiff','Audio Interchange File'],
+      ['aif','audio/aiff','Audio Interchange File'],
+      ['ogg','audio/ogg','OGG audio'],
+      ['pem','application/x-pem-file','PEM certificate'],
+      ['crt','application/x-x509-ca-cert','Certificate'],
+      ['key','application/pkcs8','Private key'],
+      ['p12','application/pkcs12','PKCS#12 certificate'],
+      ['pfx','application/pkcs12','Personal Exchange'],
+      ['der','application/x-x509-ca-cert','DER certificate'],
+      ['ndjson','application/x-ndjson','Newline-delimited JSON'],
+      ['tsv','text/tab-separated-values','Tab-separated values'],
+      ['vcf','text/vcard','vCard'],
+      ['msg','application/vnd.ms-outlook','Outlook message'],
+      ['eml','message/rfc822','Email message'],
+      ['mbox','application/mbox','Mailbox'],
+      ['deb','application/vnd.debian.binary-package','Debian package'],
+      ['rpm','application/x-rpm','RPM package'],
+      ['iso','application/x-iso9660-image','ISO disc image'],
+      ['img','application/octet-stream','Disk image'],
+      ['torrent','application/x-bittorrent','BitTorrent file'],
+      ['cab','application/vnd.ms-cab-compressed','Cabinet file'],
+      ['xz','application/x-xz','XZ archive'],
+      ['lz','application/x-lzip','LZ archive'],
+      ['lzma','application/x-lzma','LZMA archive'],
+      ['blend','application/x-blender','Blender file'],
+      ['fbx','application/octet-stream','FBX 3D model'],
+      ['obj','model/obj','3D object'],
+      ['stl','model/stl','3D model'],
+      ['glb','model/gltf-binary','glTF binary 3D'],
+      ['gltf','model/gltf+json','glTF JSON 3D'],
+      ['sketch','application/zip','Sketch file'],
+      ['fig','application/octet-stream','Figma file'],
+      ['srt','text/plain','SubRip subtitle'],
+      ['vtt','text/vtt','WebVTT subtitle'],
+      ['ass','text/plain','ASS subtitle']
+    ];
+
+    // build lookups
+    var byExt = {};
+    var byMime = {};
+    DB.forEach(function(row) {
+      var ext = row[0], mime = row[1], desc = row[2];
+      byExt[ext] = {mime: mime, desc: desc};
+      if (!byMime[mime]) byMime[mime] = {exts: [], desc: desc};
+      byMime[mime].exts.push('.' + ext);
+    });
+
+    function mimeCategory(mime) {
+      var cat = mime.split('/')[0];
+      var cats = {audio:'audio',video:'video',image:'image',text:'text',font:'font',model:'model',application:'application',message:'message'};
+      return cats[cat] || 'application';
+    }
+
+    var mode = 'ext';
+    var queryEl = document.getElementById('query');
+    var labelEl = document.getElementById('query-label');
+    var resultEl = document.getElementById('result');
+    var noResultEl = document.getElementById('no-result');
+
+    function render(html) {
+      resultEl.innerHTML = html;
+      resultEl.classList.remove('empty');
+    }
+
+    function run() {
+      var q = queryEl.value.trim().toLowerCase().replace(/^\./, '');
+      resultEl.classList.add('empty');
+      noResultEl.style.display = 'none';
+      if (!q) return;
+
+      if (mode === 'ext') {
+        var r = byExt[q];
+        if (!r) { noResultEl.style.display = ''; return; }
+        render(
+          '<div class="result-row"><div class="result-label">mime type</div><div class="result-value">' + r.mime + '</div></div>' +
+          '<div class="result-row"><div class="result-label">category</div><div class="result-value dim">' + mimeCategory(r.mime) + '</div></div>' +
+          '<div class="result-row"><div class="result-label">description</div><div class="result-value dim">' + r.desc + '</div></div>'
+        );
+      } else {
+        // type lookup — support partial
+        var full = q.includes('/') ? q : null;
+        var results = [];
+        if (full && byMime[full]) {
+          results.push({mime: full, data: byMime[full]});
+        } else {
+          for (var m in byMime) {
+            if (m.includes(q)) results.push({mime: m, data: byMime[m]});
+          }
+        }
+        if (!results.length) { noResultEl.style.display = ''; return; }
+        var html = results.map(function(r) {
+          return '<div class="result-row">' +
+            '<div class="result-label">' + r.mime + '</div>' +
+            '<div class="result-value dim" style="margin-bottom:4px">' + r.data.desc + '</div>' +
+            '<div class="exts">' + r.data.exts.map(function(e){ return '<span class="ext-tag">' + e + '</span>'; }).join('') + '</div>' +
+            '</div>';
+        }).join('<hr style="border:none;border-top:1px solid hsl(var(--rule));margin:12px 0">');
+        render(html);
+      }
+    }
+
+    queryEl.addEventListener('input', run);
+
+    document.querySelectorAll('.mode-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        mode = btn.dataset.mode;
+        document.querySelectorAll('.mode-btn').forEach(function(b){ b.setAttribute('aria-pressed', b===btn ? 'true' : 'false'); });
+        labelEl.textContent = mode === 'ext' ? 'file extension' : 'mime type';
+        queryEl.placeholder = mode === 'ext' ? '.pdf or pdf' : 'image/png or png';
+        queryEl.value = '';
+        resultEl.classList.add('empty');
+        noResultEl.style.display = 'none';
+      });
+    });
+  })();
+</script>
+</body>
+</html>

@@ -332,7 +332,7 @@
         var keys = (t.keywords || []).join(' ');
         var dataDesc = (keys + ' ' + (t.description || '')).trim();
         var nameCell = t.built
-          ? '<a href="' + esc(t.slug) + '.html">' + esc(t.name) + '</a>'
+          ? '<a href="' + esc(t.slug) + '">' + esc(t.name) + '</a>'
           : '<span class="unbuilt">' + esc(t.name) + '</span>';
         html += '<tr data-name="' + esc(t.name) + '" data-cat="' + esc(t.category) + '" data-desc="' + esc(dataDesc) + '">'
               + '<td class="name">' + nameCell + '</td>'

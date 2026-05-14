@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>pomodoro — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+
+  /* session info */
+  .session-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .session-label { font-family:var(--mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); }
+  .session-mode { font-family:var(--mono); font-size:11px; color:hsl(var(--fg-dim)); }
+
+  /* timer display */
+  .timer-display { text-align:center; margin-bottom:16px; }
+  .timer-digits { font-family:var(--mono); font-size:72px; font-weight:400; letter-spacing:-2px; line-height:1; color:hsl(var(--fg)); }
+  @media (max-width:400px) { .timer-digits { font-size:52px; } }
+
+  /* progress bar */
+  .prog-wrap { width:100%; height:2px; background:hsl(var(--muted)); border-radius:1px; margin-bottom:32px; overflow:hidden; }
+  .prog-fill { height:100%; background:hsl(var(--fg-dim)); border-radius:1px; width:0%; transition:width 0.5s linear; }
+
+  /* controls */
+  .controls { display:flex; gap:8px; justify-content:center; margin-bottom:32px; }
+  .btn { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:8px 20px; font-family:var(--mono); font-size:12px; border-radius:3px; cursor:pointer; transition:background 120ms ease, color 120ms ease; min-height:38px; }
+  .btn:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  .btn.primary { border-color:hsl(var(--fg-dim)); color:hsl(var(--fg)); }
+  .btn.primary:hover { background:hsl(var(--accent)); }
+
+  /* session dots */
+  .dots { display:flex; gap:6px; justify-content:center; margin-bottom:32px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:hsl(var(--muted)); border:1px solid hsl(var(--border)); transition:background 120ms ease; }
+  .dot.done { background:hsl(var(--fg-dim)); border-color:hsl(var(--fg-dim)); }
+
+  /* settings */
+  .settings-toggle { appearance:none; background:transparent; border:none; font-family:var(--mono); font-size:11px; letter-spacing:0.08em; color:hsl(var(--muted-fg)); cursor:pointer; display:flex; align-items:center; gap:4px; padding:0; transition:color 120ms ease; }
+  .settings-toggle:hover { color:hsl(var(--fg)); }
+  .settings-wrap { margin-top:12px; display:none; }
+  .settings-wrap.open { display:block; }
+  .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 24px; margin-top:12px; }
+  .sg { display:flex; flex-direction:column; gap:4px; }
+  label.lbl { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); }
+  input[type="number"] { width:100%; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:3px; padding:6px 10px; font-family:var(--mono); font-size:13px; color:hsl(var(--fg)); outline:none; transition:border-color 150ms ease; }
+  input[type="number"]:focus { border-color:hsl(var(--fg-dim)); }
+  .settings-apply { margin-top:12px; }
+
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } .settings-grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="/tools/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>pomodoro</h1>
+      <p>25/5 timer with long-break cycle</p>
+    </div>
+
+    <div class="session-row">
+      <span class="session-label" id="session-count">session 1</span>
+      <span class="session-mode" id="mode-label">work</span>
+    </div>
+
+    <div class="timer-display">
+      <div class="timer-digits" id="digits">25:00</div>
+    </div>
+
+    <div class="prog-wrap"><div class="prog-fill" id="prog"></div></div>
+
+    <div class="dots" id="dots" aria-label="session progress"></div>
+
+    <div class="controls">
+      <button class="btn primary" id="start-btn" aria-label="Start timer">start</button>
+      <button class="btn" id="pause-btn" aria-label="Pause timer" disabled>pause</button>
+      <button class="btn" id="reset-btn" aria-label="Reset timer">reset</button>
+      <button class="btn" id="skip-btn"  aria-label="Skip to next session">skip</button>
+    </div>
+
+    <button class="settings-toggle" id="settings-toggle" aria-expanded="false">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      settings
+    </button>
+
+    <div class="settings-wrap" id="settings-wrap">
+      <div class="settings-grid">
+        <div class="sg">
+          <label class="lbl" for="s-work">work (min)</label>
+          <input type="number" id="s-work" min="1" max="120" value="25">
+        </div>
+        <div class="sg">
+          <label class="lbl" for="s-break">break (min)</label>
+          <input type="number" id="s-break" min="1" max="60" value="5">
+        </div>
+        <div class="sg">
+          <label class="lbl" for="s-long">long break (min)</label>
+          <input type="number" id="s-long" min="1" max="120" value="15">
+        </div>
+        <div class="sg">
+          <label class="lbl" for="s-cycle">sessions before long break</label>
+          <input type="number" id="s-cycle" min="1" max="20" value="4">
+        </div>
+      </div>
+      <div class="settings-apply">
+        <button class="btn" id="apply-btn">apply &amp; reset</button>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>pomodoro</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  (function () {
+    // settings
+    var cfg = loadCfg();
+    var sWork  = document.getElementById('s-work');
+    var sBreak = document.getElementById('s-break');
+    var sLong  = document.getElementById('s-long');
+    var sCycle = document.getElementById('s-cycle');
+    sWork.value  = cfg.work;
+    sBreak.value = cfg.brk;
+    sLong.value  = cfg.longBrk;
+    sCycle.value = cfg.cycle;
+
+    var startBtn = document.getElementById('start-btn');
+    var pauseBtn = document.getElementById('pause-btn');
+    var resetBtn = document.getElementById('reset-btn');
+    var skipBtn  = document.getElementById('skip-btn');
+    var applyBtn = document.getElementById('apply-btn');
+    var digits   = document.getElementById('digits');
+    var prog     = document.getElementById('prog');
+    var dotsEl   = document.getElementById('dots');
+    var modeLabel   = document.getElementById('mode-label');
+    var sessionCount = document.getElementById('session-count');
+    var stToggle    = document.getElementById('settings-toggle');
+    var stWrap      = document.getElementById('settings-wrap');
+
+    var MODE_WORK  = 'work';
+    var MODE_BREAK = 'break';
+    var MODE_LONG  = 'long break';
+
+    var mode       = MODE_WORK;
+    var sessionNum = 1;      // current work session index (1-based)
+    var totalSecs  = cfg.work * 60;
+    var remaining  = totalSecs;
+    var running    = false;
+    var tid        = null;
+    var audioCtx   = null;
+
+    function loadCfg() {
+      try {
+        var s = localStorage.getItem('pomodoro-cfg');
+        if (s) { var o = JSON.parse(s); return { work:o.work||25, brk:o.brk||5, longBrk:o.longBrk||15, cycle:o.cycle||4 }; }
+      } catch(e){}
+      return { work:25, brk:5, longBrk:15, cycle:4 };
+    }
+    function saveCfg() {
+      try { localStorage.setItem('pomodoro-cfg', JSON.stringify(cfg)); } catch(e){}
+    }
+
+    function fmt(s) {
+      var m = Math.floor(s / 60);
+      var sec = s % 60;
+      return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    function updateDisplay() {
+      digits.textContent = fmt(remaining);
+      var pct = totalSecs > 0 ? ((totalSecs - remaining) / totalSecs * 100) : 0;
+      prog.style.width = pct + '%';
+      modeLabel.textContent = mode;
+      sessionCount.textContent = 'session ' + sessionNum;
+      document.title = fmt(remaining) + ' — pomodoro';
+      renderDots();
+    }
+
+    function renderDots() {
+      dotsEl.innerHTML = '';
+      for (var i = 1; i <= cfg.cycle; i++) {
+        var d = document.createElement('div');
+        d.className = 'dot' + (i < sessionNum ? ' done' : '');
+        dotsEl.appendChild(d);
+      }
+    }
+
+    function chime() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc  = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+      } catch(e){}
+    }
+
+    function advance() {
+      chime();
+      if (mode === MODE_WORK) {
+        // completed a work session
+        if (sessionNum % cfg.cycle === 0) {
+          mode = MODE_LONG;
+          totalSecs = cfg.longBrk * 60;
+        } else {
+          mode = MODE_BREAK;
+          totalSecs = cfg.brk * 60;
+        }
+      } else {
+        // completed a break
+        if (mode === MODE_LONG) sessionNum = 1;
+        else sessionNum++;
+        mode = MODE_WORK;
+        totalSecs = cfg.work * 60;
+      }
+      remaining = totalSecs;
+      running   = false;
+      clearInterval(tid);
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      updateDisplay();
+    }
+
+    function tick() {
+      if (remaining <= 0) { advance(); return; }
+      remaining--;
+      updateDisplay();
+    }
+
+    startBtn.addEventListener('click', function () {
+      if (running) return;
+      if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+      running = true;
+      startBtn.disabled = true;
+      pauseBtn.disabled = false;
+      tid = setInterval(tick, 1000);
+    });
+
+    pauseBtn.addEventListener('click', function () {
+      if (!running) return;
+      running = false;
+      clearInterval(tid);
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+    });
+
+    resetBtn.addEventListener('click', function () {
+      running = false;
+      clearInterval(tid);
+      remaining = totalSecs;
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      updateDisplay();
+    });
+
+    skipBtn.addEventListener('click', function () {
+      running = false;
+      clearInterval(tid);
+      remaining = 0;
+      advance();
+    });
+
+    applyBtn.addEventListener('click', function () {
+      cfg.work    = Math.max(1, parseInt(sWork.value,  10) || 25);
+      cfg.brk     = Math.max(1, parseInt(sBreak.value, 10) || 5);
+      cfg.longBrk = Math.max(1, parseInt(sLong.value,  10) || 15);
+      cfg.cycle   = Math.max(1, parseInt(sCycle.value, 10) || 4);
+      saveCfg();
+      running = false;
+      clearInterval(tid);
+      mode       = MODE_WORK;
+      sessionNum = 1;
+      totalSecs  = cfg.work * 60;
+      remaining  = totalSecs;
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      updateDisplay();
+    });
+
+    stToggle.addEventListener('click', function () {
+      var open = stWrap.classList.toggle('open');
+      stToggle.setAttribute('aria-expanded', open);
+    });
+
+    // init
+    updateDisplay();
+  })();
+</script>
+</body>
+</html>

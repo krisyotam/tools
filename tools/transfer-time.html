@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>transfer time — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } }
+
+  /* tool */
+  .lbl { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin-bottom:6px; display:block; }
+  .input-group { display:flex; gap:8px; align-items:stretch; margin-bottom:16px; }
+  .num-input { flex:1; font-family:var(--mono); font-size:14px; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:10px 12px; color:hsl(var(--fg)); outline:none; transition:border-color 150ms ease; -moz-appearance:textfield; }
+  .num-input::-webkit-outer-spin-button,.num-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+  .num-input:focus { border-color:hsl(var(--fg-dim)); }
+  .unit-sel { font-family:var(--mono); font-size:13px; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:10px 12px; color:hsl(var(--fg)); outline:none; cursor:pointer; transition:border-color 150ms ease; appearance:none; -webkit-appearance:none; padding-right:28px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; background-size:14px; }
+  .unit-sel:focus { border-color:hsl(var(--fg-dim)); }
+  .result { margin:24px 0 20px; }
+  .result-time { font-family:var(--mono); font-size:40px; font-weight:500; letter-spacing:-0.02em; line-height:1; margin-bottom:4px; }
+  .result-sub { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); }
+  .stats { display:flex; flex-direction:column; gap:0; border:1px solid hsl(var(--border)); border-radius:4px; overflow:hidden; }
+  .stat-row { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid hsl(var(--rule)); }
+  .stat-row:last-child { border-bottom:none; }
+  .stat-label { font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:hsl(var(--muted-fg)); }
+  .stat-val { font-family:var(--mono); font-size:13px; color:hsl(var(--fg)); }
+</style>
+</head>
+<body>
+<div class="page">
+ <div class="grow">
+ <main class="shell">
+  <div class="nav">
+    <a class="back" href="/tools/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+    <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+  </div>
+  <div class="head">
+    <h1>transfer time</h1>
+    <p>how long will this file take to transfer</p>
+  </div>
+
+  <label class="lbl" for="sizeInput">file size</label>
+  <div class="input-group">
+    <input type="number" class="num-input" id="sizeInput" value="1" min="0" step="any" aria-label="File size">
+    <select class="unit-sel" id="sizeUnit" aria-label="File size unit">
+      <option value="1">B</option>
+      <option value="1024">KB</option>
+      <option value="1048576" selected>MB</option>
+      <option value="1073741824">GB</option>
+      <option value="1099511627776">TB</option>
+    </select>
+  </div>
+
+  <label class="lbl" for="speedInput">connection speed</label>
+  <div class="input-group">
+    <input type="number" class="num-input" id="speedInput" value="100" min="0" step="any" aria-label="Connection speed">
+    <select class="unit-sel" id="speedUnit" aria-label="Speed unit">
+      <option value="1000">Kbps</option>
+      <option value="1000000" selected>Mbps</option>
+      <option value="1000000000">Gbps</option>
+    </select>
+  </div>
+
+  <div class="result">
+    <div class="result-time" id="resultTime">—</div>
+    <div class="result-sub" id="resultSub"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-row">
+      <span class="stat-label">throughput</span>
+      <span class="stat-val" id="sThroughput">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">total bytes</span>
+      <span class="stat-val" id="sBytes">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">total bits</span>
+      <span class="stat-val" id="sBits">—</span>
+    </div>
+  </div>
+ </main>
+ </div>
+
+ <footer>
+  <div class="foot-inner">
+    <span>transfer time</span>
+    <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+  </div>
+ </footer>
+</div>
+
+<script>
+(function(){
+  var btn=document.querySelector('[data-theme-toggle]');
+  function pl(){var d=document.documentElement.classList.contains('dark');btn.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}
+  pl();btn.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}pl();});
+})();
+
+(function(){
+  var sizeInput=document.getElementById('sizeInput');
+  var sizeUnit=document.getElementById('sizeUnit');
+  var speedInput=document.getElementById('speedInput');
+  var speedUnit=document.getElementById('speedUnit');
+  var resultTime=document.getElementById('resultTime');
+  var resultSub=document.getElementById('resultSub');
+  var sThroughput=document.getElementById('sThroughput');
+  var sBytes=document.getElementById('sBytes');
+  var sBits=document.getElementById('sBits');
+
+  function fmtBytes(b){
+    if(b>=1099511627776) return (b/1099511627776).toFixed(2)+' TB';
+    if(b>=1073741824) return (b/1073741824).toFixed(2)+' GB';
+    if(b>=1048576) return (b/1048576).toFixed(2)+' MB';
+    if(b>=1024) return (b/1024).toFixed(2)+' KB';
+    return b.toFixed(0)+' B';
+  }
+  function fmtBits(b){
+    if(b>=1e12) return (b/1e12).toFixed(2)+' Tb';
+    if(b>=1e9) return (b/1e9).toFixed(2)+' Gb';
+    if(b>=1e6) return (b/1e6).toFixed(2)+' Mb';
+    if(b>=1e3) return (b/1e3).toFixed(2)+' Kb';
+    return b.toFixed(0)+' b';
+  }
+  function fmtTime(s){
+    if(!isFinite(s)||s<0) return '—';
+    if(s<1) return (s*1000).toFixed(0)+'ms';
+    var h=Math.floor(s/3600);
+    var m=Math.floor((s%3600)/60);
+    var sc=Math.floor(s%60);
+    var parts=[];
+    if(h) parts.push(h+'h');
+    if(m) parts.push(m+'m');
+    if(sc||!parts.length) parts.push(sc+'s');
+    return parts.join(' ');
+  }
+
+  function calc(){
+    var size=parseFloat(sizeInput.value);
+    var su=parseFloat(sizeUnit.value);
+    var speed=parseFloat(speedInput.value);
+    var spu=parseFloat(speedUnit.value);
+    if(isNaN(size)||isNaN(speed)||size<=0||speed<=0){
+      resultTime.textContent='—';resultSub.textContent='';
+      sThroughput.textContent='—';sBytes.textContent='—';sBits.textContent='—';
+      return;
+    }
+    var totalBytes=size*su;
+    var totalBits=totalBytes*8;
+    var bitsPerSec=speed*spu;
+    var seconds=totalBits/bitsPerSec;
+    var mbps=bitsPerSec/1e6;
+    var throughputMBs=bitsPerSec/8/1048576;
+    resultTime.textContent=fmtTime(seconds);
+    resultSub.textContent='at '+speed+' '+(spu===1e3?'Kbps':spu===1e6?'Mbps':'Gbps');
+    sThroughput.textContent=throughputMBs.toFixed(2)+' MB/s';
+    sBytes.textContent=fmtBytes(totalBytes);
+    sBits.textContent=fmtBits(totalBits);
+  }
+
+  [sizeInput,sizeUnit,speedInput,speedUnit].forEach(function(el){el.addEventListener('input',calc);});
+  calc();
+})();
+</script>
+</body>
+</html>

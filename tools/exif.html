@@ -1,0 +1,213 @@
+<!doctype html>
+<!-- dep: exifreader@4.23.0 via cdn.jsdelivr.net -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>exif — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/exifreader@4.23.0/dist/exif-reader.js"></script>
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } }
+
+  /* tool-specific */
+  .drop-zone { border:1px dashed hsl(var(--border)); border-radius:4px; padding:32px; text-align:center; cursor:pointer; transition:border-color 150ms ease, background 150ms ease; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color:hsl(var(--fg-dim)); background:hsl(var(--accent)); }
+  .drop-zone input[type=file] { display:none; }
+  .drop-label { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); }
+  .drop-label span { color:hsl(var(--fg-dim)); text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
+  .result { margin-top:24px; display:none; }
+  .result.visible { display:block; }
+  .section-lbl { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin-bottom:10px; }
+  dl.exif { border:1px solid hsl(var(--border)); border-radius:4px; overflow:hidden; }
+  dl.exif div { display:flex; align-items:baseline; gap:16px; padding:8px 14px; border-bottom:1px solid hsl(var(--rule)); }
+  dl.exif div:last-child { border-bottom:none; }
+  dl.exif dt { font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); white-space:nowrap; min-width:140px; flex-shrink:0; }
+  dl.exif dd { font-family:var(--sans); font-size:13px; color:hsl(var(--fg)); word-break:break-all; }
+  .no-exif { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); padding:16px 0; }
+  .strip-btn { margin-top:12px; appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:6px 12px; font-family:var(--mono); font-size:11px; border-radius:3px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .strip-btn:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  @media (max-width:560px) { dl.exif dt { min-width:100px; } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="/tools/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>exif</h1>
+      <p>view or strip image metadata</p>
+    </div>
+
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept="image/*" aria-label="Choose image file">
+      <div class="drop-label">drop an image here or <span id="browse-lbl">browse</span></div>
+    </div>
+
+    <div class="result" id="result">
+      <div class="section-lbl" style="margin-top:20px;">metadata</div>
+      <dl class="exif" id="exif-list"></dl>
+      <button class="strip-btn" id="strip-btn">download without exif</button>
+    </div>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>exif</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  (function () {
+    var dropZone = document.getElementById('drop-zone');
+    var fileInput = document.getElementById('file-input');
+    var browseLbl = document.getElementById('browse-lbl');
+    var result = document.getElementById('result');
+    var exifList = document.getElementById('exif-list');
+    var stripBtn = document.getElementById('strip-btn');
+
+    var currentFile = null;
+
+    var FIELDS = [
+      ['Make', 'Camera make'],
+      ['Model', 'Camera model'],
+      ['LensModel', 'Lens'],
+      ['ExposureTime', 'Exposure'],
+      ['FNumber', 'Aperture'],
+      ['ISOSpeedRatings', 'ISO'],
+      ['FocalLength', 'Focal length'],
+      ['DateTimeOriginal', 'Date taken'],
+      ['Software', 'Software'],
+      ['GPSLatitude', 'GPS latitude'],
+      ['GPSLongitude', 'GPS longitude'],
+      ['ImageWidth', 'Width'],
+      ['ImageHeight', 'Height'],
+      ['ColorSpace', 'Color space'],
+      ['Flash', 'Flash'],
+    ];
+
+    browseLbl.addEventListener('click', function () { fileInput.click(); });
+    dropZone.addEventListener('click', function (e) { if (e.target !== browseLbl) fileInput.click(); });
+
+    dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('drag-over'); });
+    dropZone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      var f = e.dataTransfer.files[0];
+      if (f) processFile(f);
+    });
+
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files[0]) processFile(fileInput.files[0]);
+    });
+
+    function processFile(file) {
+      currentFile = file;
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var buf = e.target.result;
+        var tags = {};
+        try { tags = ExifReader.load(buf); } catch (err) {}
+        renderExif(tags, file.name);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function getVal(tag) {
+      if (!tag) return null;
+      if (tag.description !== undefined && tag.description !== null) return String(tag.description);
+      if (tag.value !== undefined && tag.value !== null) return String(tag.value);
+      return null;
+    }
+
+    function renderExif(tags, fname) {
+      exifList.innerHTML = '';
+      var found = 0;
+      for (var i = 0; i < FIELDS.length; i++) {
+        var key = FIELDS[i][0];
+        var label = FIELDS[i][1];
+        var val = getVal(tags[key]);
+        if (!val) continue;
+        var div = document.createElement('div');
+        var dt = document.createElement('dt');
+        dt.textContent = label;
+        var dd = document.createElement('dd');
+        dd.textContent = val;
+        div.appendChild(dt);
+        div.appendChild(dd);
+        exifList.appendChild(div);
+        found++;
+      }
+      if (found === 0) {
+        exifList.innerHTML = '<div class="no-exif" style="padding:16px 14px;">no readable exif data found</div>';
+      }
+      result.classList.add('visible');
+    }
+
+    stripBtn.addEventListener('click', function () {
+      if (!currentFile) return;
+      var img = new Image();
+      var url = URL.createObjectURL(currentFile);
+      img.onload = function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        var mime = currentFile.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        canvas.toBlob(function (blob) {
+          var a = document.createElement('a');
+          var ext = mime === 'image/png' ? '.png' : '.jpg';
+          a.download = currentFile.name.replace(/\.[^.]+$/, '') + '-stripped' + ext;
+          a.href = URL.createObjectURL(blob);
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+        }, mime, 0.95);
+      };
+      img.src = url;
+    });
+  })();
+</script>
+</body>
+</html>

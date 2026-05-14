@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>palette — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } }
+
+  /* tool */
+  .upload-zone { border:1px dashed hsl(var(--border)); border-radius:4px; padding:40px 24px; text-align:center; cursor:pointer; transition:border-color 150ms ease, background 150ms ease; position:relative; margin-bottom:24px; }
+  .upload-zone:hover, .upload-zone.drag { border-color:hsl(var(--fg-dim)); background:hsl(var(--accent)); }
+  .upload-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .upload-zone .hint { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); }
+  .preview-img { max-width:100%; max-height:200px; border-radius:4px; border:1px solid hsl(var(--border)); display:block; margin:0 auto 20px; }
+  .swatches { display:grid; grid-template-columns:repeat(8,1fr); gap:8px; margin-bottom:16px; }
+  .swatch-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
+  .swatch-color { width:100%; aspect-ratio:1; border-radius:4px; border:1px solid hsl(var(--border)); transition:transform 120ms ease; }
+  .swatch-item:hover .swatch-color { transform:scale(1.07); }
+  .swatch-hex { font-family:var(--mono); font-size:9px; color:hsl(var(--muted-fg)); text-align:center; }
+  .actions { display:flex; gap:8px; margin-top:8px; }
+  .action-btn { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:7px 14px; font-family:var(--mono); font-size:12px; border-radius:4px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .action-btn:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  .copied-toast { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); margin-top:8px; min-height:18px; }
+  @media (max-width:560px) { .swatches { grid-template-columns:repeat(4,1fr); } }
+</style>
+</head>
+<body>
+<div class="page">
+ <div class="grow">
+ <main class="shell">
+  <div class="nav">
+    <a class="back" href="/tools/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+    <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+  </div>
+  <div class="head">
+    <h1>palette</h1>
+    <p>extract dominant colors from an image</p>
+  </div>
+
+  <div class="upload-zone" id="dropZone">
+    <input type="file" id="fileInput" accept="image/*" aria-label="Upload image">
+    <p class="hint">drop an image here or click to browse</p>
+  </div>
+
+  <img id="previewImg" class="preview-img" style="display:none" alt="Preview">
+  <div class="swatches" id="swatches" style="display:none"></div>
+  <div class="copied-toast" id="toast"></div>
+  <div class="actions" id="actions" style="display:none">
+    <button class="action-btn" id="downloadBtn">download palette png</button>
+  </div>
+ </main>
+ </div>
+
+ <footer>
+  <div class="foot-inner">
+    <span>palette</span>
+    <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+  </div>
+ </footer>
+</div>
+<canvas id="offscreen" style="display:none"></canvas>
+
+<script>
+(function(){
+  var btn=document.querySelector('[data-theme-toggle]');
+  function pl(){var d=document.documentElement.classList.contains('dark');btn.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}
+  pl();btn.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}pl();});
+})();
+
+(function(){
+  var dropZone=document.getElementById('dropZone');
+  var fileInput=document.getElementById('fileInput');
+  var previewImg=document.getElementById('previewImg');
+  var swatchesEl=document.getElementById('swatches');
+  var actionsEl=document.getElementById('actions');
+  var toast=document.getElementById('toast');
+  var canvas=document.getElementById('offscreen');
+  var ctx=canvas.getContext('2d');
+  var currentColors=[];
+
+  function toHex(r,g,b){return '#'+[r,g,b].map(function(v){return Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0');}).join('');}
+
+  function quantize(v){ return Math.round(v/8)*8; }
+
+  function extractColors(img){
+    var W=100,H=100;
+    canvas.width=W;canvas.height=H;
+    ctx.drawImage(img,0,0,W,H);
+    var data=ctx.getImageData(0,0,W,H).data;
+    var buckets={};
+    for(var i=0;i<data.length;i+=4){
+      var r=quantize(data[i]),g=quantize(data[i+1]),b=quantize(data[i+2]);
+      var key=r+','+g+','+b;
+      buckets[key]=(buckets[key]||0)+1;
+    }
+    var sorted=Object.keys(buckets).sort(function(a,b){return buckets[b]-buckets[a];});
+    var top=[];
+    for(var j=0;j<sorted.length&&top.length<8;j++){
+      var parts=sorted[j].split(',').map(Number);
+      // deduplicate by distance
+      var tooClose=false;
+      for(var k=0;k<top.length;k++){
+        var dr=parts[0]-top[k][0],dg=parts[1]-top[k][1],db=parts[2]-top[k][2];
+        if(Math.sqrt(dr*dr+dg*dg+db*db)<40){tooClose=true;break;}
+      }
+      if(!tooClose) top.push(parts);
+    }
+    return top;
+  }
+
+  function renderSwatches(colors){
+    currentColors=colors;
+    swatchesEl.innerHTML='';
+    colors.forEach(function(c){
+      var hex=toHex(c[0],c[1],c[2]);
+      var item=document.createElement('div');
+      item.className='swatch-item';
+      item.setAttribute('title','Click to copy '+hex);
+      var sw=document.createElement('div');
+      sw.className='swatch-color';
+      sw.style.background=hex;
+      var lbl=document.createElement('span');
+      lbl.className='swatch-hex';
+      lbl.textContent=hex;
+      item.appendChild(sw);item.appendChild(lbl);
+      item.addEventListener('click',function(){
+        navigator.clipboard.writeText(hex).then(function(){
+          toast.textContent='copied '+hex;
+          setTimeout(function(){toast.textContent='';},1200);
+        });
+      });
+      swatchesEl.appendChild(item);
+    });
+    swatchesEl.style.display='grid';
+    actionsEl.style.display='flex';
+  }
+
+  function processFile(file){
+    if(!file||!file.type.startsWith('image/')) return;
+    var url=URL.createObjectURL(file);
+    var img=new Image();
+    img.onload=function(){
+      previewImg.src=url;previewImg.style.display='block';
+      renderSwatches(extractColors(img));
+    };
+    img.src=url;
+  }
+
+  fileInput.addEventListener('change',function(){processFile(fileInput.files[0]);});
+  dropZone.addEventListener('dragover',function(e){e.preventDefault();dropZone.classList.add('drag');});
+  dropZone.addEventListener('dragleave',function(){dropZone.classList.remove('drag');});
+  dropZone.addEventListener('drop',function(e){e.preventDefault();dropZone.classList.remove('drag');processFile(e.dataTransfer.files[0]);});
+
+  document.getElementById('downloadBtn').addEventListener('click',function(){
+    var W=currentColors.length*60,H=80;
+    var c2=document.createElement('canvas');c2.width=W;c2.height=H;
+    var cx=c2.getContext('2d');
+    currentColors.forEach(function(col,i){
+      cx.fillStyle=toHex(col[0],col[1],col[2]);
+      cx.fillRect(i*60,0,60,H);
+    });
+    var a=document.createElement('a');a.href=c2.toDataURL('image/png');a.download='palette.png';a.click();
+  });
+})();
+</script>
+</body>
+</html>

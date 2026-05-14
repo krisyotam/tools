@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>encrypt — tools</title>
+<script>(function(){try{var t=localStorage.getItem('tools-theme');var d=t||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.add(d);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:0 0% 100%; --fg:0 0% 20%; --fg-dim:0 0% 35%; --muted:0 0% 92%; --muted-fg:0 0% 50%; --border:0 0% 88%; --rule:0 0% 82%; --accent:0 0% 96%; --serif:'Lora',ui-serif,Georgia,serif; --sans:'Inter',ui-sans-serif,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  html.dark { --bg:0 0% 7%; --fg:0 0% 96%; --fg-dim:0 0% 78%; --muted:0 0% 12%; --muted-fg:0 0% 60%; --border:0 0% 17%; --rule:0 0% 22%; --accent:0 0% 11%; }
+  html.dark { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+  body { font-family: var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .page { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  .grow { flex-grow:1; }
+  .shell { width:100%; max-width:640px; margin:0 auto; padding:32px 32px 56px; }
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .back { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 120ms ease; }
+  .back:hover { color:hsl(var(--fg)); }
+  .back svg { width:12px; height:12px; }
+  .toggle { appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); width:32px; height:32px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .toggle:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .toggle svg { width:16px; height:16px; }
+  .toggle .icon-sun { display:none; }
+  .toggle .icon-moon { display:block; }
+  html.dark .toggle .icon-sun { display:block; }
+  html.dark .toggle .icon-moon { display:none; }
+  .head { margin-bottom:28px; }
+  .head h1 { font-family:var(--serif); font-weight:500; font-size:28px; letter-spacing:-0.01em; line-height:1.15; margin-bottom:4px; }
+  .head p { font-family:var(--serif); font-style:italic; font-size:14px; color:hsl(var(--muted-fg)); }
+
+  .modes { display:flex; gap:0; margin-bottom:20px; border:1px solid hsl(var(--border)); border-radius:4px; padding:2px; width:fit-content; }
+  .mode-btn { appearance:none; background:transparent; border:none; padding:6px 14px; font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); cursor:pointer; border-radius:3px; transition:background 120ms ease, color 120ms ease; }
+  .mode-btn[aria-pressed="true"] { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  label.lbl { display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:hsl(var(--muted-fg)); margin:18px 0 6px; }
+  input[type="text"], input[type="password"] { width:100%; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:10px 14px; font-family:var(--mono); font-size:13px; color:hsl(var(--fg)); outline:none; transition:border-color 150ms ease; }
+  input:focus { border-color:hsl(var(--fg-dim)); }
+  input::placeholder { color:hsl(var(--muted-fg)); }
+  textarea { width:100%; min-height:140px; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); border-radius:4px; padding:12px 14px; font-family:var(--mono); font-size:13px; line-height:1.6; color:hsl(var(--fg)); outline:none; resize:vertical; transition:border-color 150ms ease; }
+  textarea:focus { border-color:hsl(var(--fg-dim)); }
+  textarea::placeholder { color:hsl(var(--muted-fg)); }
+  .run-btn { margin-top:16px; appearance:none; background:hsl(var(--accent)); border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:9px 18px; font-family:var(--mono); font-size:12px; border-radius:4px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .run-btn:hover { color:hsl(var(--fg)); border-color:hsl(var(--rule)); }
+  .copy { margin-top:8px; appearance:none; background:transparent; border:1px solid hsl(var(--border)); color:hsl(var(--fg-dim)); padding:5px 10px; font-family:var(--mono); font-size:11px; border-radius:3px; cursor:pointer; transition:background 120ms ease, color 120ms ease; }
+  .copy:hover { background:hsl(var(--accent)); color:hsl(var(--fg)); }
+  .msg { font-family:var(--mono); font-size:12px; color:hsl(var(--muted-fg)); margin-top:10px; min-height:18px; }
+  .msg.err { color: hsl(0 60% 50%); }
+
+  footer { width:100%; max-width:640px; margin:0 auto; padding:20px 32px 28px; }
+  .foot-inner { padding-top:18px; border-top:1px solid hsl(var(--rule)); font-family:var(--mono); font-size:11px; color:hsl(var(--muted-fg)); display:flex; justify-content:space-between; }
+  footer a { color:inherit; text-decoration:underline; text-underline-offset:2px; text-decoration-color:hsl(var(--border)); }
+  footer a:hover { text-decoration-color:hsl(var(--muted-fg)); }
+
+  @media (max-width:560px) { .shell { padding:22px 22px 40px; } footer { padding:12px 22px 24px; } .head h1 { font-size:24px; } }
+</style>
+</head>
+<body>
+ <div class="page">
+  <div class="grow">
+  <main class="shell">
+    <div class="nav">
+      <a class="back" href="/tools/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>tools</a>
+      <button class="toggle" data-theme-toggle aria-label="Switch to dark"><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    </div>
+    <div class="head">
+      <h1>encrypt</h1>
+      <p>aes-gcm with passphrase + pbkdf2</p>
+    </div>
+
+    <div class="modes" role="tablist">
+      <button class="mode-btn" data-mode="encrypt" aria-pressed="true">encrypt</button>
+      <button class="mode-btn" data-mode="decrypt" aria-pressed="false">decrypt</button>
+    </div>
+
+    <label class="lbl" for="pass">passphrase</label>
+    <input type="password" id="pass" placeholder="enter passphrase" autocomplete="off">
+
+    <label class="lbl" for="input">input</label>
+    <textarea id="input" placeholder="plaintext or ciphertext…"></textarea>
+
+    <button class="run-btn" id="run">encrypt</button>
+    <div class="msg" id="msg"></div>
+
+    <label class="lbl" for="output">output</label>
+    <textarea id="output" readonly placeholder="result…"></textarea>
+    <button class="copy" data-copy="output">copy</button>
+  </main>
+  </div>
+
+  <footer>
+    <div class="foot-inner">
+      <span>encrypt</span>
+      <span><a href="https://github.com/krisyotam/tools" rel="noopener">github.com/krisyotam/tools</a></span>
+    </div>
+  </footer>
+ </div>
+
+<script>
+  (function(){var b=document.querySelector('[data-theme-toggle]');function p(){var d=document.documentElement.classList.contains('dark');b.setAttribute('aria-label',d?'Switch to light':'Switch to dark');}p();b.addEventListener('click',function(){var h=document.documentElement;var d=h.classList.contains('dark');h.classList.remove('dark','light');var n=d?'light':'dark';h.classList.add(n);try{localStorage.setItem('tools-theme',n);}catch(e){}p();});})();
+
+  (function () {
+    var mode = 'encrypt';
+    var passEl = document.getElementById('pass');
+    var inputEl = document.getElementById('input');
+    var outputEl = document.getElementById('output');
+    var msgEl = document.getElementById('msg');
+    var runBtn = document.getElementById('run');
+
+    document.querySelectorAll('.mode-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        mode = btn.dataset.mode;
+        document.querySelectorAll('.mode-btn').forEach(function (b) { b.setAttribute('aria-pressed', b === btn); });
+        runBtn.textContent = mode;
+        outputEl.value = '';
+        msgEl.textContent = '';
+        msgEl.className = 'msg';
+      });
+    });
+
+    function b64(buf) {
+      return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+    }
+    function unb64(s) {
+      var b = atob(s), a = new Uint8Array(b.length);
+      for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+      return a.buffer;
+    }
+
+    async function deriveKey(passphrase, salt) {
+      var enc = new TextEncoder();
+      var keyMat = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey(
+        {name:'PBKDF2', salt:salt, iterations:100000, hash:'SHA-256'},
+        keyMat,
+        {name:'AES-GCM', length:256},
+        false,
+        ['encrypt','decrypt']
+      );
+    }
+
+    async function run() {
+      var pass = passEl.value;
+      var input = inputEl.value;
+      if (!pass) { setMsg('passphrase required', true); return; }
+      if (!input.trim()) { setMsg('input required', true); return; }
+      runBtn.disabled = true;
+      try {
+        if (mode === 'encrypt') {
+          var salt = crypto.getRandomValues(new Uint8Array(16));
+          var iv   = crypto.getRandomValues(new Uint8Array(12));
+          var key  = await deriveKey(pass, salt);
+          var enc  = new TextEncoder();
+          var ct   = await crypto.subtle.encrypt({name:'AES-GCM', iv:iv}, key, enc.encode(input));
+          var combined = new Uint8Array(salt.length + iv.length + ct.byteLength);
+          combined.set(salt, 0);
+          combined.set(iv, salt.length);
+          combined.set(new Uint8Array(ct), salt.length + iv.length);
+          outputEl.value = b64(combined.buffer);
+          setMsg('encrypted', false);
+        } else {
+          var buf  = unb64(input.trim());
+          var arr  = new Uint8Array(buf);
+          var salt2 = arr.slice(0, 16);
+          var iv2   = arr.slice(16, 28);
+          var ct2   = arr.slice(28);
+          var key2  = await deriveKey(pass, salt2);
+          try {
+            var pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:iv2}, key2, ct2);
+            outputEl.value = new TextDecoder().decode(pt);
+            setMsg('decrypted', false);
+          } catch (e2) {
+            setMsg('decryption failed — wrong passphrase?', true);
+            outputEl.value = '';
+          }
+        }
+      } catch (e) {
+        setMsg('error: ' + e.message, true);
+      } finally {
+        runBtn.disabled = false;
+      }
+    }
+
+    function setMsg(t, isErr) {
+      msgEl.textContent = t;
+      msgEl.className = 'msg' + (isErr ? ' err' : '');
+    }
+
+    runBtn.addEventListener('click', run);
+
+    document.querySelectorAll('[data-copy]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var t = document.getElementById(b.dataset.copy);
+        navigator.clipboard.writeText(t.value).then(function () { var o = b.textContent; b.textContent = 'copied'; setTimeout(function () { b.textContent = o; }, 900); });
+      });
+    });
+  })();
+</script>
+</body>
+</html>
