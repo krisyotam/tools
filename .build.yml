@@ -1,0 +1,12 @@
+image: alpine/edge
+secrets:
+  - stargate_ssh
+tasks:
+  - deploy: |
+      ssh -o StrictHostKeyChecking=no krisyotam@73.50.72.176 '
+        set -eu
+        cd /mnt/storage/sites/tools
+        git fetch --quiet origin
+        git reset --hard origin/main
+        echo "tools deployed"
+      '
